@@ -6,9 +6,9 @@
 
 ## Status and scope
 
-Version `0.2.0` is experimental. It requires macOS, Python 3.9 or newer, and installed ArtCraft desktop apps. Its runtime uses only the Python standard library.
+Version `0.3.0` is experimental. It requires macOS, Python 3.9 or newer, and installed ArtCraft desktop apps. Its runtime uses only the Python standard library.
 
-The bridge does not provide an MCP registration, a web API, a hosted service, or a PyPI package. Agents and scripts invoke its shell command directly. The installed apps perform their own work; the bridge makes no network request on their behalf.
+The bridge does not provide an MCP registration, a web API, a hosted service, or a PyPI package. Agents and scripts invoke its shell command directly. The installed apps perform their document operations. The optional CAD mesh extension computes convex extrusion and STL locally in the bridge; it makes no internet request.
 
 Supported app identifiers are:
 
@@ -199,6 +199,50 @@ artcraft-bridge --workspace "$PWD/cadcraft-demo" stop cadcraft
 ```
 
 Use the same `--state-dir` for the example and subsequent CLI calls if you chose a custom one. See the [example source](examples/cadcraft_cube.py) and the [recorded verification result](docs/cadcraft-cube-verification.json). The report contains no local absolute paths or control tokens.
+
+## Closed volume and STL — bridge extension
+
+![STL surface preview, plotted independently from the exported file](docs/images/cadcraft-solid-stl.png)
+
+**Verified in CADCraft 0.5.0 on 2026-10-11.** A 40 × 30 mm closed polyline was drawn in CADCraft. The bridge extruded its live coordinates by 20 mm into a closed convex triangle boundary, imported those twelve `3DFACE` triangles into CADCraft, saved and reopened the DXF, then wrote STL from CADCraft's inspected face coordinates. The exported block encloses **24,000 mm³**, with eight vertices and dimensions **40 × 30 × 20 mm**.
+
+Independent validation with trimesh 4.12.2 reports `is_watertight`, `is_winding_consistent` and `is_volume` all true, Euler characteristic 2 and the expected dimensions and volume. The image above is an independent plot of the exported STL, not CADCraft's viewport. See the [recorded result](docs/cadcraft-solid-verification.json).
+
+### What runs where
+
+CADCraft owns the source profile and the imported DXF triangle faces. **ArtCraft Bridge performs extrusion and STL serialization.** The app has no native `box`, `extrude` or `exportstl` command in the tested 341-command catalog. This produces a genuine closed mesh boundary enclosing a volume, not a CADCraft BRep/ACIS solid. CADCraft displays face edges in XY projection; it does not provide a shaded 3D solid viewport. [Upstream format limitations](https://github.com/storytold/cadcraft/blob/main/docs/file-format-parity.md) and [roadmap](https://github.com/storytold/cadcraft/blob/main/ROADMAP.md) describe the missing native 3D/STL work.
+
+### Reproduce the complete live test
+
+From an installed source checkout, use a fresh dedicated workspace and a new managed session:
+
+```bash
+python3 examples/cadcraft_solid.py --workspace "$PWD/cadcraft-solid-demo"
+```
+
+The example saves the original profile, exports a bridge STL and 3DFACE DXF, imports the latter into CADCraft, saves/reopens it and exports `outputs/block-cadcraft-reopened.stl` from the reopened faces. It leaves the saved mesh drawing open. It refuses nonempty output directories and reused managed sessions. Use `--state-dir DIR` consistently for independent sessions.
+
+### Use your own profile
+
+Create a closed straight lightweight polyline in the managed CADCraft drawing, then run:
+
+```bash
+artcraft-bridge --workspace "$PWD/my-cad-project" cad-extrude \
+  --height 20 --units mm --name my-part
+```
+
+This writes `outputs/my-part.stl` and `outputs/my-part.dxf`, without replacing the open drawing. If the drawing contains several entities, select the source with `--handle HANDLE` from `drawing.inspect`. Coordinates must explicitly be interpreted as millimetres; STL itself carries no unit field. Existing output files are never overwritten.
+
+To import the generated face mesh into CADCraft, use `app.open` with its absolute DXF path. You can then save/reopen it through the normal bridge calls. To export the current CADCraft face mesh:
+
+```bash
+artcraft-bridge --workspace "$PWD/my-cad-project" cad-export-stl \
+  --units mm --name my-part-from-cadcraft
+```
+
+### Supported scope
+
+The dependency-free exporter accepts simple strictly convex closed profiles made of straight segments and a positive extrusion height. Mesh export accepts convex closed consistently oriented triangular `3DFACE` boundaries. Holes, concave outlines, curved/bulged segments, wide polylines, quads, booleans, bevels and native solid entities are rejected. It checks nondegenerate triangles, paired opposite edge directions, convex boundary planes and positive volume. This is a bounded extrusion/export tool, not a general CAD kernel. The live sample passes independent topology/volume checks; no physical print was performed.
 
 ## Migration from 0.1.0
 

@@ -17,3 +17,5 @@ No upstream implementation is vendored. The runtime uses Python's standard libra
 ## Included CADCraft preview
 
 `docs/images/cadcraft-cube.png` is a native CADCraft render of the original cube defined by this repository’s example code. It contains only that synthetic geometry, with no imported assets, application chrome, private drawing or embedded text metadata. This project-owned example image is included under the repository’s MIT license.
+
+`docs/images/cadcraft-solid-stl.png` is an independently plotted preview of the original example mesh, generated using matplotlib. It contains no imported artwork or app UI. It and the synthetic example geometry are repository-owned MIT example assets. Trimesh and matplotlib were used separately for verification/preview only; they are not shipped or runtime dependencies.

@@ -1,0 +1,41 @@
+{
+  "triangles": 12,
+  "vertices": 8,
+  "watertight": true,
+  "consistent_winding": true,
+  "volume": 24000.0,
+  "bounds": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      40.0,
+      30.0,
+      20.0
+    ]
+  ],
+  "units": "mm",
+  "backend": "bridge STL writer from CADCraft 3DFACE readback",
+  "file": "block-cadcraft-reopened.stl",
+  "app": "CADCraft",
+  "app_version": "0.5.0",
+  "native_brep": false,
+  "stl_writer": "ArtCraft Bridge",
+  "dxf_saved_and_reopened": true,
+  "independent_stl_check": {
+    "library": "trimesh",
+    "version": "4.12.2",
+    "watertight": true,
+    "is_volume": true,
+    "consistent_winding": true,
+    "euler_number": 2,
+    "volume_mm3": 24000.0,
+    "dimensions_mm": [
+      40.0,
+      30.0,
+      20.0
+    ]
+  }
+}

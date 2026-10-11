@@ -1,6 +1,14 @@
-# Verification evidence for 0.2.0
+# Verification evidence for 0.3.0
 
-## CADCraft live 3D geometry test
+## CADCraft closed-volume and STL live test
+
+CADCraft 0.5.0 created a 40 × 30 mm closed polyline. ArtCraft Bridge extruded it by 20 mm, imported the generated 12 triangular 3DFACE entities into CADCraft, saved and reopened that DXF, and verified identical XYZ triangles. The bridge wrote STL directly from the reopened face readback. This is a closed convex triangle mesh enclosing 24,000 mm³, not a native BRep solid.
+
+An independent trimesh 4.12.2 load verifies watertight topology, consistent orientation, is_volume, Euler characteristic 2, dimensions 40 × 30 × 20 mm and volume 24,000 mm³. The path-free report is [cadcraft-solid-verification.json](cadcraft-solid-verification.json). The preview is plotted from the exported STL with matplotlib, not the CADCraft viewport. The exporter needs no runtime dependencies. All 45 unit tests pass locally.
+
+Live probes of box, extrude and exportstl returned unknown command; the 341-command catalog contains none. Upstream source snapshot 77de6af455acf4802bfaf77970f1236002e649f5 supports Face3d import/save/readback but has no native solid kernel/STL writer. See [format parity](https://github.com/storytold/cadcraft/blob/77de6af455acf4802bfaf77970f1236002e649f5/docs/file-format-parity.md).
+
+## Historical CADCraft 0.2.0 live 3D geometry test
 
 On 2026-10-11 the renamed package created a 40 mm cube in CADCraft 0.5.0 using twelve `3dpoly` commands. It read `drawing.inspect`, saved via `app.save`, reopened the DXF via `app.open`, repeated the geometry checks and rendered a native PNG via `ui.render`.
 

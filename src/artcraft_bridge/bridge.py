@@ -365,6 +365,14 @@ def main():
             p.add_argument("--portable-copy", action="store_true", help="Opt in to copying and locally signing PdfCraft")
         if action == "stop":
             p.add_argument("--allow-empty-pdf-termination", action="store_true", help="Allow SIGTERM only for an empty managed PdfCraft")
+    p = sub.add_parser("cad-export-stl", help="Export a convex closed CADCraft triangular face mesh as STL")
+    p.add_argument("--units", choices=["mm"], required=True)
+    p.add_argument("--name", default="cadcraft-solid")
+    p = sub.add_parser("cad-extrude", help="Extrude a CADCraft convex profile into bridge-owned STL and 3DFACE DXF")
+    p.add_argument("--height", type=float, required=True)
+    p.add_argument("--units", choices=["mm"], required=True, help="Explicitly interpret source coordinates as millimetres")
+    p.add_argument("--handle", help="Source entity handle; required if drawing contains more than one entity")
+    p.add_argument("--name", default="extrusion")
     p = sub.add_parser("call")
     p.add_argument("app", choices=APPS)
     p.add_argument("method")
@@ -374,7 +382,17 @@ def main():
     args = parser.parse_args()
     configure(args.workspace, args.state_dir, args.apps_dir)
     try:
-        if args.action == "inventory":
+        if args.action == "cad-export-stl":
+            from .solid import export_stl
+            drawing = call("cadcraft", "drawing.inspect", {"entities": True, "limit": 10000})
+            result = export_stl(drawing, BASE / "outputs", args.name)
+        elif args.action == "cad-extrude":
+            from .solid import export_extrusion
+            drawing = call("cadcraft", "drawing.inspect", {"entities": True, "limit": 10000})
+            if len(drawing.get("entities", [])) != drawing.get("entityCount"):
+                raise BridgeError("Drawing inspection is truncated; use a smaller drawing")
+            result = export_extrusion(drawing, args.height, BASE / "outputs", args.name, args.handle)
+        elif args.action == "inventory":
             result = inventory()
         elif args.action == "start":
             result = start(args.app, args.portable_copy)

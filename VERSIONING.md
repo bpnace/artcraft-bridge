@@ -1,13 +1,13 @@
 # Versioning and releases
 
-The current version is **0.2.0**. The original release was 0.1.0. It is experimental. This repository uses `MAJOR.MINOR.PATCH` version numbers.
+The current version is **0.3.0**. The original release was 0.1.0. It is experimental. This repository uses `MAJOR.MINOR.PATCH` version numbers.
 
 ## Policy
 
 - During `0.x`, incompatible CLI, Python API or session-state changes increase the minor version. Bug fixes that keep compatibility increase the patch version.
 - From `1.0.0`, incompatible changes increase the major version, compatible features increase the minor version, and compatible fixes increase the patch version.
 - Each release records supported app versions and any required session-state migration. App releases are independent of bridge releases; an app upgrade can change available methods and command schemas.
-- Prereleases use suffixes such as `0.2.0-rc.1` in Git tags and changelog entries. Python package prerelease spelling must follow Python packaging conventions before a prerelease package is built.
+- Prereleases use suffixes such as `0.3.0-rc.1` in Git tags and changelog entries. Python package prerelease spelling must follow Python packaging conventions before a prerelease package is built.
 
 ## Source of truth
 
@@ -29,4 +29,4 @@ Git tags are `vMAJOR.MINOR.PATCH`, for example `v0.1.0`. A version file or chang
 6. Commit the reviewed changes and tag that exact commit. Publish only the reviewed refs and artifacts, using the maintainer's publication approval process.
 7. Verify the public repository, tag and downloadable artifacts from an anonymous session.
 
-A future automated release workflow should enforce these steps. Version 0.2.0 has no automatic PyPI or GitHub release publishing job.
+A future automated release workflow should enforce these steps. Version 0.3.0 has no automatic PyPI or GitHub release publishing job.

@@ -4,6 +4,16 @@ All changes that affect users are recorded here. Versions follow the policy in [
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-11
+
+### Added
+
+- Bridge-owned convex extrusion from live CADCraft closed profiles into STL and 3DFACE DXF via `cad-extrude`.
+- `cad-export-stl` exports a validated convex closed triangular face boundary from CADCraft readback.
+- Live 40 × 30 × 20 mm block test with CADCraft import/save/reopen and independent STL volume/topology checks.
+- Reproducible example, STL preview and boundary documentation distinguishing mesh volume from native BRep solids.
+- Geometry, serialization, invalid-input, translation-invariance and output-preservation tests.
+
 ## [0.2.0] - 2026-10-11
 
 ### Changed

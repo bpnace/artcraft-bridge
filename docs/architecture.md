@@ -128,7 +128,7 @@ The bridge does not claim that an app cannot access other files, contact a netwo
 
 The predecessor prototype successfully connected to all eight target apps, collected their catalogs, and shut down the bridge-managed instances. It observed the following versions and catalog counts: PhotoCraft 0.7.0 (858), DesignCraft 0.6.0 (555), VectorCraft 0.9.0 (992), FilmCraft 0.6.0 (693), LightCraft 0.6.0 (453), EffectCraft 0.8.0 (669), PdfCraft 0.6.0 (185), and CADCraft 0.5.0 (341).
 
-Only the DesignCraft flow that created an A4 document, inserted text, read it back, saved it, and rendered a PNG preview was exercised as an end-to-end document operation. Version 0.2.0 also verifies CADCraft 3D polyline cube creation, DXF save/reopen and rendering, as detailed in [verification.md](verification.md). Other catalog entries remain discovery evidence, not a statement that every action was tested.
+The DesignCraft flow that created an A4 document, inserted text, read it back, saved it, and rendered a PNG preview was exercised as an end-to-end document operation. Version 0.2.0 also verifies CADCraft 3D polyline cube creation, DXF save/reopen and rendering, as detailed in [verification.md](verification.md). Version 0.3.0 adds a bridge-owned convex extrusion mesh path, CADCraft 3DFACE import/save/reopen and STL export from the reopened faces. The app itself has no BRep kernel or STL exporter. The extension lives in `solid.py`; the CLI exposes `cad-extrude` and `cad-export-stl`, requires explicit mm units and refuses output overwrite. Other catalog entries remain discovery evidence, not a statement that every action was tested.
 
 ## Validation
 
@@ -140,7 +140,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 Unit tests cover the bridge behavior without requiring the desktop apps. A full app integration run still needs the target ArtCraft apps installed on a macOS host and should use a dedicated workspace and state directory.
 
-## Non-goals for v0.2.0
+## Non-goals for v0.3.0
 
 - No MCP server registration or native tool registration.
 - No HTTP, hosted, or remote-control API.
