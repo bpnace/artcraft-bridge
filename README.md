@@ -1,6 +1,10 @@
-# artcraft-bridge
+# ArtCraft Bridge — local creative app automation for AI agents
 
-`artcraft-bridge` is an experimental local command-line bridge for the ArtCraft Crafting Apps on macOS. It starts and controls isolated, bridge-managed desktop sessions through the apps' local control interfaces.
+**ArtCraft Bridge connects AI agents and local automation scripts to installed ArtCraft creative applications on macOS.** Its command-line interface and Python API let an agent discover app commands, inspect documents, execute supported operations and export files through local control interfaces. It is open-source, MIT-licensed and experimental.
+
+Use it to give an AI coding agent a practical interface to CADCraft, DesignCraft, PhotoCraft, VectorCraft, FilmCraft, LightCraft, EffectCraft and PdfCraft. Verified examples include document creation in DesignCraft and CADCraft geometry workflows with DXF persistence and bridge-assisted STL export.
+
+Documentation updated 2026-10-11. Current bridge version **0.3.0**.
 
 > Independent automation for ArtCraft Crafting Apps. This project is not affiliated with ArtCraft and does not use the Recraft cloud image service.
 
@@ -13,6 +17,87 @@ The bridge does not provide an MCP registration, a web API, a hosted service, or
 Supported app identifiers are:
 
 `photocraft`, `designcraft`, `vectorcraft`, `filmcraft`, `lightcraft`, `effectcraft`, `pdfcraft`, and `cadcraft`.
+
+## What is ArtCraft Bridge for?
+
+ArtCraft Bridge is a **local app automation bridge for AI agents**, built around a CLI and structured JSON results. An agent with authorized shell access can use the same commands as a human developer. Python-based agents can call the package directly. The bridge does not depend on a particular language model or AI provider.
+
+Typical uses include:
+
+- Letting a coding agent inspect and operate an installed creative application.
+- Connecting a tool-calling AI agent to local desktop document workflows through a shell or Python tool.
+- Reading app state and geometry to verify that an operation actually succeeded.
+- Automating supported design, CAD and export operations with reproducible scripts.
+
+The agent chooses the operations; the bridge handles local session control and app requests. Available features depend on the installed app version. A command catalog is discovery evidence, not proof that every creative operation works.
+
+## How can Codex and other AI agents use ArtCraft apps?
+
+An AI agent needs a way to execute local commands on the Mac where the ArtCraft apps are installed. Install ArtCraft Bridge there, give the agent the executable path and a dedicated workspace, and let it query the live command catalog before acting.
+
+| Agent environment | Integration path | Evidence |
+| --- | --- | --- |
+| Codex with local shell access | Invoke `artcraft-bridge` or `python3 -m artcraft_bridge` as shell commands. | This project's live DesignCraft and CADCraft examples were executed from Codex on macOS. |
+| Other local coding agents, including Claude Code or Gemini CLI | Invoke the same CLI when the host agent has authorized local shell access. | Intended CLI integration; these individual clients have not been integration-tested here. |
+| Custom Python agents and AI tool frameworks | Import `artcraft_bridge.bridge` and expose selected functions as agent tools. | The Python API is used by the runnable CADCraft examples. Framework-specific adapters are not included. |
+| Remote or chat-only assistants | Require a separate authorized execution tool on the local Mac. | ArtCraft Bridge itself provides no hosted connector or remote endpoint. |
+
+### Agent quick start
+
+After [installing from source](#install-from-source), an agent can start with these commands. Use the same workspace and state directory throughout the session:
+
+```bash
+artcraft-bridge --workspace "$PWD/agent-workspace" inventory
+artcraft-bridge --workspace "$PWD/agent-workspace" start cadcraft
+artcraft-bridge --workspace "$PWD/agent-workspace" commands cadcraft
+artcraft-bridge --workspace "$PWD/agent-workspace" call cadcraft drawing.inspect \
+  '{"entities": true, "limit": 100}'
+```
+
+Operational results are JSON on stdout. Errors are JSON on stderr with a nonzero exit code. An agent can inspect these results before choosing its next operation. Use the [command reference](#command-reference) and live app catalog for exact method names and parameters.
+
+For a Python agent:
+
+```python
+from artcraft_bridge import bridge
+
+bridge.configure(workspace="./agent-workspace")
+available_apps = bridge.inventory()
+bridge.start("cadcraft")
+drawing = bridge.call("cadcraft", "drawing.inspect", {"entities": True, "limit": 100})
+```
+
+### Instructions you can give an AI agent
+
+> Use ArtCraft Bridge to work with the installed ArtCraft apps on this Mac. Use a dedicated workspace, inspect the app inventory, start a managed session and read its live command catalog. Execute supported operations through the CLI or Python API. Verify results by inspecting the document and checking saved exports. Report which steps succeeded and which app capabilities are unavailable.
+
+## Which AI-agent workflows have actually been tested?
+
+| Workflow | Verified result | Reproducible evidence |
+| --- | --- | --- |
+| DesignCraft document automation | Create an A4 document, insert text, inspect it, save a native document and render PNG. | [Document example](#command-reference) and [verification record](docs/verification.md). |
+| CADCraft 3D wireframe automation | Create a 40 mm XYZ cube, save/reopen DXF and verify its 12 edges and 8 vertices. | [Cube example](examples/cadcraft_cube.py) and [geometry report](docs/cadcraft-cube-verification.json). |
+| CADCraft profile-to-STL workflow | Create a profile in CADCraft, extrude in the bridge, roundtrip triangular DXF faces through CADCraft and export a closed-volume STL. | [Solid example](examples/cadcraft_solid.py) and [independent STL verification](docs/cadcraft-solid-verification.json). |
+
+These examples demonstrate local agent-driven creative automation. The STL workflow uses the bridge's convex mesh extension; CADCraft 0.5.0 has no native BRep solid kernel or STL exporter. FilmCraft and EffectCraft command discovery has been tested, but this repository does not yet demonstrate a complete video-editing workflow.
+
+## AI integration FAQ
+
+### Is ArtCraft Bridge an MCP server?
+
+No. ArtCraft Bridge currently exposes a local CLI and Python API. Agents can invoke them through their existing shell or Python tools. An MCP wrapper could expose selected bridge operations, but no MCP server or automatic tool registration is included.
+
+### Does it work with any AI model?
+
+The bridge does not call an AI model. It is provider-independent: an agent can use it if its runtime supports authorized local shell execution or Python calls. Model-specific adapters and hosted chat integrations are not bundled.
+
+### Does the bridge require a cloud API key?
+
+The bridge's local control connection does not require an AI-provider API key. Your chosen AI agent and the installed ArtCraft apps have their own access requirements. Local app control does not imply that every app feature runs offline.
+
+### Can AI agents create 3D objects and export STL with CADCraft?
+
+The tested bridge-assisted workflow produces a closed convex triangle mesh from a straight closed CADCraft profile and exports STL. It verifies the mesh after CADCraft saves and reopens the DXF. Native CADCraft solid modeling, booleans and a general-purpose CAD kernel are not provided; see [supported mesh scope](#supported-scope).
 
 ## Install from source
 
@@ -78,6 +163,8 @@ Operational commands write structured JSON to standard output. Errors are JSON o
 | `call APP METHOD [JSON]` | Sends an app method with an optional JSON object parameter. |
 | `call APP METHOD --params-file FILE` | Reads the JSON object parameter from `FILE`. Use this for nontrivial parameters and file paths. |
 | `stop APP` | Requests a safe stop for a session owned by this bridge. |
+| `cad-extrude --height N --units mm --name NAME` | Extrudes a supported CADCraft profile in the bridge and writes STL plus triangular DXF; use `--handle HANDLE` for a drawing with multiple entities. |
+| `cad-export-stl --units mm --name NAME` | Writes STL from the current CADCraft convex closed triangular face mesh. |
 
 Typical read-only sequence:
 

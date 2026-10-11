@@ -4,6 +4,10 @@ All changes that affect users are recorded here. Versions follow the policy in [
 
 ## [Unreleased]
 
+### Documentation
+
+- Clarified ArtCraft Bridge as a provider-independent local CLI/Python bridge for AI agents, including Codex usage, integration paths, verified workflows and AI integration FAQ.
+
 ## [0.3.0] - 2026-10-11
 
 ### Added
