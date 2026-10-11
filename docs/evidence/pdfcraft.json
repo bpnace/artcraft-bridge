@@ -1,0 +1,22 @@
+{
+  "app": "PdfCraft",
+  "version": "0.6.0",
+  "passed": true,
+  "actions": [
+    "open copied print PDF",
+    "rotate 90 degrees and save",
+    "independently check rotation and text",
+    "reopen",
+    "restore orientation and save",
+    "capture native UI",
+    "close test document"
+  ],
+  "pages": 1,
+  "final_rotation": 0,
+  "text_preserved": true,
+  "temporary_bundle_removed": true,
+  "files": [
+    "outputs/after-hours-pdf-test.pdf",
+    "outputs/pdfcraft-window.png"
+  ]
+}

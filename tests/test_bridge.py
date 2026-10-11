@@ -9,7 +9,7 @@ import tempfile
 import threading
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from artcraft_bridge import bridge as b
 
@@ -19,10 +19,13 @@ class BridgeTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         self.old_paths = (b.BASE, b.RUNTIME, b.APPS_DIR)
+        self.lock_patch = patch.object(b, 'LAUNCH_LOCK_DIR', self.root / 'global-locks', create=True)
+        self.lock_patch.start()
         b.configure(self.root / 'workspace', self.root / 'runtime', self.root / 'apps')
 
     def tearDown(self):
         b.BASE, b.RUNTIME, b.APPS_DIR = self.old_paths
+        self.lock_patch.stop()
         self.tmp.cleanup()
 
     def test_params_must_be_objects(self):
@@ -201,6 +204,68 @@ class BridgeTests(unittest.TestCase):
             with self.assertRaises(b.SessionConflict):
                 b.start('designcraft')
             launch.assert_not_called()
+
+    def test_process_scan_matches_executable_not_arguments(self):
+        name = b.executable('designcraft')
+        copied = '/private/test/DesignCraft.app/Contents/MacOS/DesignCraft'
+        output = f' 101 {name}\n 102 {copied}\n 103 /usr/bin/python3\n 0 {name}\n -2 {name}\n 104 /tmp/DesignCraftHelper\n'
+        with patch.object(b.subprocess, 'run', return_value=Mock(returncode=0, stdout=output)) as scan:
+            self.assertEqual(b.running_instances('designcraft'), [101, 102])
+        self.assertEqual(scan.call_args.args[0], ['ps', '-axo', 'pid=,comm='])
+
+    def test_process_scan_failure_blocks_launch(self):
+        with patch.object(b.subprocess, 'run', return_value=Mock(returncode=1, stdout='')), self.assertRaises(b.BridgeError):
+            b.running_instances('designcraft')
+
+    def test_start_refuses_external_or_cross_state_instance(self):
+        for binary in (b.executable('designcraft'), '/other/state/DesignCraft.app/Contents/MacOS/DesignCraft'):
+            with self.subTest(binary=binary), patch.object(b.platform, 'system', return_value='Darwin'), patch.object(b.Path, 'is_file', return_value=True), patch.object(b, 'load_state', side_effect=b.BridgeError('no state')), patch.object(b.subprocess, 'run', return_value=Mock(returncode=0, stdout=f' 987 {binary}\n')), patch.object(b.subprocess, 'Popen') as launch:
+                with self.assertRaisesRegex(b.SessionConflict, '--allow-multiple'):
+                    b.start('designcraft')
+                launch.assert_not_called()
+
+    def test_start_reuses_healthy_session_before_process_scan(self):
+        state = {'pid': 123, 'port': 456}
+        with patch.object(b.platform, 'system', return_value='Darwin'), patch.object(b.Path, 'is_file', return_value=True), patch.object(b, 'load_state', return_value=state), patch.object(b, 'call', return_value={}), patch.object(b, 'running_instances') as scan, patch.object(b.subprocess, 'Popen') as launch:
+            self.assertTrue(b.start('designcraft')['reused'])
+            scan.assert_not_called()
+            launch.assert_not_called()
+
+    def test_multiple_instances_require_explicit_opt_in(self):
+        with patch.object(b.platform, 'system', return_value='Darwin'), patch.object(b.Path, 'is_file', return_value=True), patch.object(b, 'load_state', side_effect=b.BridgeError('no state')), patch.object(b, 'running_instances', return_value=[987]) as scan, patch.object(b.socket, 'socket'), patch.object(b.subprocess, 'Popen', side_effect=RuntimeError('launch reached')) as launch:
+            with self.assertRaisesRegex(RuntimeError, 'launch reached'):
+                b.start('designcraft', allow_multiple=True)
+            scan.assert_not_called()
+            launch.assert_called_once()
+
+    def test_launch_lock_shared_across_state_directories(self):
+        state = {'pid': 123, 'port': 456}
+        with patch.object(b.platform, 'system', return_value='Darwin'), patch.object(b.Path, 'is_file', return_value=True), patch.object(b, 'load_state', return_value=state), patch.object(b, 'call', return_value={}):
+            for directory in ('runtime-one', 'runtime-two'):
+                b.configure(state_dir=self.root / directory)
+                b.start('designcraft')
+        lock = b.LAUNCH_LOCK_DIR / 'designcraft.lock'
+        self.assertTrue(lock.is_file())
+        self.assertEqual(lock.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(len(list(b.LAUNCH_LOCK_DIR.iterdir())), 1)
+
+    def test_global_launch_lock_serializes_concurrent_starts(self):
+        acquired = threading.Event()
+        def competing_start():
+            with b.launch_lock('designcraft'):
+                acquired.set()
+        with b.launch_lock('designcraft'):
+            worker = threading.Thread(target=competing_start)
+            worker.start()
+            self.assertFalse(acquired.wait(.05))
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertTrue(acquired.is_set())
+
+    def test_cli_multiple_instances_opt_in(self):
+        with patch('sys.argv', ['artcraft-bridge', 'start', 'designcraft', '--allow-multiple']), patch.object(b, 'start', return_value={}) as start, patch('sys.stdout', new_callable=io.StringIO):
+            self.assertEqual(b.main(), 0)
+        start.assert_called_once_with('designcraft', False, True)
 
     def test_non_macos_launch_rejected(self):
         with patch.object(b.platform, 'system', return_value='Linux'), self.assertRaisesRegex(b.BridgeError, 'macOS'):

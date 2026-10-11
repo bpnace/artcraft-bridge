@@ -1,6 +1,6 @@
 # Versioning and releases
 
-The current version is **0.3.0**. The original release was 0.1.0. It is experimental. This repository uses `MAJOR.MINOR.PATCH` version numbers.
+The current version is **0.4.0**. The original release was 0.1.0. It is experimental. This repository uses `MAJOR.MINOR.PATCH` version numbers.
 
 ## Policy
 
@@ -29,4 +29,4 @@ Git tags are `vMAJOR.MINOR.PATCH`, for example `v0.1.0`. A version file or chang
 6. Commit the reviewed changes and tag that exact commit. Publish only the reviewed refs and artifacts, using the maintainer's publication approval process.
 7. Verify the public repository, tag and downloadable artifacts from an anonymous session.
 
-A future automated release workflow should enforce these steps. Version 0.3.0 has no automatic PyPI or GitHub release publishing job.
+A future automated release workflow should enforce these steps. Version 0.4.0 has no automatic PyPI or GitHub release publishing job.

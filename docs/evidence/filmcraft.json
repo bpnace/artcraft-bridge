@@ -1,0 +1,34 @@
+{
+  "app": "filmcraft",
+  "version": "0.6.0",
+  "overall": "pass",
+  "creative_workflow": "FORM / AFTER HOURS motion title",
+  "actions": {
+    "create_native_project": "pass",
+    "create_graphics_and_text": "pass",
+    "animate": "pass",
+    "save_native_project": "pass",
+    "reopen_native_project": "pass",
+    "export_png": "pass",
+    "export_h264_video": "pass",
+    "decode_all_frames": "pass",
+    "verify_temporal_frame_changes": "pass"
+  },
+  "video": {
+    "file": "after-hours.mp4",
+    "codec": "h264",
+    "width": 1280,
+    "height": 720,
+    "fps": 24,
+    "frames": 96,
+    "duration_seconds": 4,
+    "unique_decoded_frames": 24
+  },
+  "native_project": "after-hours.filmcraft",
+  "preview": "after-hours.png",
+  "animation": "Two native cross dissolves",
+  "limits": [
+    "No audio included",
+    "Short synthetic graphics test; not exhaustive app coverage"
+  ]
+}

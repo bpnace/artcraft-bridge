@@ -1,0 +1,120 @@
+{
+  "app": "PhotoCraft",
+  "concept": "AFTER HOURS / FORM AFTER DARK",
+  "imageSource": "Original ImageGen architectural photograph; composition performed in PhotoCraft",
+  "canvas": [
+    1600,
+    2000
+  ],
+  "resolutionPpi": 72,
+  "layerCount": 18,
+  "layerKinds": {
+    "Shape": 6,
+    "Type": 9,
+    "Pixel": 3
+  },
+  "layers": [
+    {
+      "name": "Headline / AFTER",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "15 / Studio imprint",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "14 / Sticker monogram",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "13 / Edition sticker",
+      "kind": "Shape",
+      "hasMask": false
+    },
+    {
+      "name": "12 / Issue header",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "11 / Edition header",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "10 / Footer metadata",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "09 / Footer headline",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "Headline / HOURS",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "08 / Cobalt footer",
+      "kind": "Shape",
+      "hasMask": false
+    },
+    {
+      "name": "07 / Splice label",
+      "kind": "Type",
+      "hasMask": false
+    },
+    {
+      "name": "06 / Lime paper splice",
+      "kind": "Shape",
+      "hasMask": false
+    },
+    {
+      "name": "05 / Cropped concrete beam \u2014 second photo fragment",
+      "kind": "Pixel",
+      "hasMask": false
+    },
+    {
+      "name": "01 / Concrete stair tower \u2014 perspective cutout",
+      "kind": "Pixel",
+      "hasMask": true
+    },
+    {
+      "name": "02 / Tangerine sun",
+      "kind": "Shape",
+      "hasMask": false
+    },
+    {
+      "name": "03 / Cobalt architectural block",
+      "kind": "Shape",
+      "hasMask": false
+    },
+    {
+      "name": "04 / Torn paper backing",
+      "kind": "Shape",
+      "hasMask": false
+    },
+    {
+      "name": "Background",
+      "kind": "Pixel",
+      "hasMask": false
+    }
+  ],
+  "saveWarnings": [],
+  "reopenWarnings": [],
+  "pngExportWarnings": [
+    "18 layer(s) flattened; layers, masks and blend modes are not kept"
+  ],
+  "saveReopenStructureIdentical": true,
+  "reopenedPngByteIdentical": true,
+  "previewSha256": "60f4ab8a174b6db42a5861056779a32355d6d2959257fe52c28c44fcb5266876",
+  "nativeProject": "outputs/after-hours-collage.pcraft",
+  "preview": "outputs/after-hours-collage.png",
+  "testPassed": true,
+  "appVersion": "0.7.0"
+}

@@ -1,0 +1,14 @@
+{
+  "version": "0.4.0",
+  "same_state_reused": true,
+  "different_state_launch_refused": true,
+  "process_count_unchanged_during_guard_test": true,
+  "saved_owned_duplicate_tests_stopped": {
+    "designcraft": true,
+    "photocraft": true,
+    "vectorcraft": true,
+    "cadcraft": true
+  },
+  "unknown_instances_not_adopted_or_stopped": true,
+  "manual_external_launch_race_not_prevented": true
+}

@@ -1,0 +1,26 @@
+{
+  "triangles": 12,
+  "vertices": 8,
+  "watertight": true,
+  "consistent_winding": true,
+  "volume": 24000.0,
+  "bounds": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      40.0,
+      30.0,
+      20.0
+    ]
+  ],
+  "units": "mm",
+  "backend": "bridge STL writer from CADCraft 3DFACE readback",
+  "file": "block-cadcraft-reopened.stl",
+  "app": "CADCraft",
+  "native_brep": false,
+  "dxf_saved_and_reopened": true,
+  "pipeline": "CADCraft profile -> bridge extrusion -> CADCraft face roundtrip -> bridge STL"
+}

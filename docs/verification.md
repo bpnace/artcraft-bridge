@@ -1,4 +1,22 @@
-# Verification evidence for 0.3.0
+# Verification evidence for 0.4.0
+
+## Current automated and live checks
+
+All 56 standard-library unit tests passed locally. Version consistency, CLI help, syntax and outgoing diff checks passed. Eight regressions cover duplicate launch prevention, process discovery, explicit opt-in, healthy reuse, shared per-user locking and concurrent launch serialization. Three additional tests cover rocket topology, missing/reversed faces, serialization and preserving existing STL output.
+
+A live check reused the original managed CADCraft rocket PID, then rejected a different-state start with no new process. Four saved bridge-owned duplicate test sessions were stopped via their own control channels; unknown instances were not adopted or terminated. See [session-guard.json](evidence/session-guard.json). The global lock serializes bridge launches; it cannot serialize manual external launches.
+
+The standard-library [public rocket example](../examples/cadcraft_rocket.py) was executed in a fresh isolated session with explicit parallel-session opt-in. CADCraft saved and reopened all 2,560 faces identically; the resulting STL was independently loaded with trimesh and confirmed watertight, consistently oriented, positive-volume and Euler characteristic 2. The temporary example session was closed normally. The core convex exporter is unchanged.
+
+## Eight representative creative workflows
+
+The preceding live creative tests used bridge 0.3.0 on 2026-10-11. All eight apps completed actual document or media operations, with save/reopen and export checks described in [app-tests.md](app-tests.md). Selected original previews, path-free reports, two H.264 clips and the verified rocket STL are included. Private native projects, raw inspection replies, app profiles and control tokens remain excluded.
+
+The DesignCraft PDF requested PDF/X-4; formal PDF/X conformance validation was not run. PhotoCraft received an ImageGen source photograph, but the layered collage was composed in the native app. FilmCraft/EffectCraft tests are short graphics workflows without audio. CADCraft geometry is a mesh boundary, not a BRep solid. Other clients, arbitrary media, all formats and all app features remain unverified.
+
+## Historical evidence
+
+# Verification evidence for 0.3.0 (historical)
 
 ## CADCraft closed-volume and STL live test
 
@@ -56,10 +74,10 @@ PdfCraft used the explicitly opted-in private portable copy and empty-session te
 
 ## Not verified
 
-- Every individual catalog action, complex design work, video editing or 3D modeling.
+- Every individual catalog action, arbitrary complex projects or all video/3D features beyond the current representative tests.
 - All import/export formats, large media, long renders or recovery from app crashes.
 - Other app versions, macOS versions, CPU architectures or operating systems.
-- GitHub-hosted CI before the workflow has actually run.
+- Historical initial CI status; current publication checks must inspect the run for the exact outgoing commit.
 - Package-registry publication, an MCP integration, or an official upstream endorsement.
 
 Repeat affected live checks before changing an integration's compatibility claims. Use a disposable workspace and separate runtime state. Do not commit the resulting app profiles or project files.

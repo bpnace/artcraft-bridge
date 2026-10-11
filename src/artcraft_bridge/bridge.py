@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local ArtCraft desktop control client. Python standard library only."""
 import argparse
+from contextlib import contextmanager
 import fcntl
 import json
 import os
@@ -20,6 +21,7 @@ from . import __version__
 
 BASE = Path(os.environ.get("ARTCRAFT_BRIDGE_WORKSPACE", str(Path.cwd()))).expanduser().resolve()
 RUNTIME = Path(os.environ.get("ARTCRAFT_BRIDGE_STATE_DIR", str(Path.home() / "Library" / "Application Support" / "artcraft-bridge"))).expanduser().resolve()
+LAUNCH_LOCK_DIR = Path.home() / "Library" / "Application Support" / "artcraft-bridge" / "launch-locks"
 APPS_DIR = Path(os.environ.get("ARTCRAFT_BRIDGE_APPS_DIR", "/Applications")).expanduser().resolve()
 
 
@@ -99,6 +101,40 @@ def process_matches(app, pid, binary=None, identity=None):
 def executable(app):
     name = APPS[app]["name"]
     return str(APPS_DIR / (name + ".app") / "Contents" / "MacOS" / name)
+
+
+def running_instances(app):
+    """Find app executables across profiles without reading command arguments."""
+    result = subprocess.run(["ps", "-axo", "pid=,comm="], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise BridgeError("Cannot inspect running apps; refusing to launch another instance")
+    name = APPS[app]["name"]
+    suffix = "/" + name + ".app/Contents/MacOS/" + name
+    installed = executable(app)
+    matches = []
+    for line in result.stdout.splitlines():
+        fields = line.strip().split(None, 1)
+        if len(fields) != 2:
+            continue
+        try:
+            pid = int(fields[0])
+        except ValueError:
+            continue
+        binary = fields[1]
+        if pid > 0 and (binary == installed or binary.endswith(suffix)):
+            matches.append(pid)
+    return matches
+
+
+@contextmanager
+def launch_lock(app):
+    """Serialize starts for this user and app, even with different state roots."""
+    LAUNCH_LOCK_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    path = LAUNCH_LOCK_DIR / (app + ".lock")
+    fd = os.open(str(path), os.O_CREAT | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
 
 
 def inventory():
@@ -219,7 +255,7 @@ def call(app, method, params=None, timeout=20, state=None):
             raise BridgeError("Reply failed; operation may have completed. Inspect before retrying: {}".format(error))
 
 
-def start(app, portable_copy=False):
+def start(app, portable_copy=False, allow_multiple=False):
     if platform.system() != "Darwin":
         raise BridgeError("Desktop launch is supported only on macOS")
     if app == "pdfcraft" and not portable_copy:
@@ -232,7 +268,7 @@ def start(app, portable_copy=False):
         raise BridgeError("App is not installed: " + spec["name"])
     runtime = RUNTIME / app
     runtime.mkdir(parents=True, exist_ok=True, mode=0o700)
-    with (runtime / "launch.lock").open("a") as lock:
+    with launch_lock(app), (runtime / "launch.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         try:
             state = load_state(app)
@@ -243,6 +279,13 @@ def start(app, portable_copy=False):
         if state:
             call(app, "ui.state" if spec.get("rpc") else "ui.inspect", state=state)
             return {"app": app, "pid": state["pid"], "port": state["port"], "reused": True}
+        if not allow_multiple:
+            existing = running_instances(app)
+            if existing:
+                raise SessionConflict(
+                    "{} is already running (PIDs {}). Use the existing session's --state-dir, "
+                    "or explicitly pass --allow-multiple for an isolated session. "
+                    "Unknown instances are never adopted or stopped.".format(spec["name"], existing))
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
@@ -362,6 +405,7 @@ def main():
         p = sub.add_parser(action)
         p.add_argument("app", choices=APPS)
         if action == "start":
+            p.add_argument("--allow-multiple", action="store_true", help="Explicitly allow another isolated instance of an already running app")
             p.add_argument("--portable-copy", action="store_true", help="Opt in to copying and locally signing PdfCraft")
         if action == "stop":
             p.add_argument("--allow-empty-pdf-termination", action="store_true", help="Allow SIGTERM only for an empty managed PdfCraft")
@@ -395,7 +439,7 @@ def main():
         elif args.action == "inventory":
             result = inventory()
         elif args.action == "start":
-            result = start(args.app, args.portable_copy)
+            result = start(args.app, args.portable_copy, args.allow_multiple)
         elif args.action == "stop":
             result = stop(args.app, args.allow_empty_pdf_termination)
         elif args.action == "inspect":

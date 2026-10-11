@@ -1,0 +1,89 @@
+{
+  "app": "DesignCraft",
+  "native_saved_reopened": true,
+  "pages": 1,
+  "page_points": [
+    841.8898,
+    1190.5512
+  ],
+  "page_mm": [
+    297,
+    420
+  ],
+  "items": 19,
+  "editable_text_stories": 8,
+  "overset_stories": 0,
+  "fonts": [
+    {
+      "characters": 37,
+      "family": "Helvetica Neue",
+      "missing": false,
+      "source": "installed",
+      "style": "Bold",
+      "styleMissing": false
+    },
+    {
+      "characters": 4,
+      "family": "Helvetica Neue",
+      "missing": false,
+      "source": "installed",
+      "style": "Condensed Black",
+      "styleMissing": false
+    },
+    {
+      "characters": 136,
+      "family": "Helvetica Neue",
+      "missing": false,
+      "source": "installed",
+      "style": "Regular",
+      "styleMissing": false
+    }
+  ],
+  "pdf_export": {
+    "bytes": 261270,
+    "pages": 1,
+    "warnings": []
+  },
+  "requested_pdf_standard": "PDF/X-4",
+  "configured_bleed_mm": 3,
+  "crop_and_bleed_marks": true,
+  "swatches": "native CMYK definitions",
+  "files": {
+    "form-after-hours.designcraft": {
+      "bytes": 6035,
+      "sha256": "65fa7473c68a728a8e379ed58e5c8c0716626540e000b606749ff8523c4fbe14"
+    },
+    "form-after-hours-print.pdf": {
+      "bytes": 261270,
+      "sha256": "f8a129301aff02c56f50930f9f64cced6f39fc38a2c60a675fe072a8f6b2e6c0"
+    },
+    "form-after-hours-preview.png": {
+      "bytes": 104000,
+      "sha256": "98806c72d8435e03e829c1d7e60b0844de2082c09246eeb9f1f2281eeca52be4"
+    }
+  },
+  "independent_pdf_check": {
+    "pages": 1,
+    "trim_box": [
+      32.5039,
+      32.503906,
+      874.3937,
+      1223.055
+    ],
+    "bleed_box": [
+      24,
+      24,
+      882.8976,
+      1231.559
+    ],
+    "trim_mm": [
+      297,
+      420
+    ],
+    "all_used_fonts_embedded": true,
+    "embedded_font_count": 3,
+    "output_intent_present": true,
+    "text_extractable": true,
+    "formal_pdfx_validator_run": false
+  }
+}

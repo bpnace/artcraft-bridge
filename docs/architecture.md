@@ -60,11 +60,11 @@ stateDiagram-v2
     Stopping --> Managed: app retains a save prompt
 ```
 
-`start APP` checks for an installed bundle, creates an isolated profile, starts the app with its local control option, waits for the listener, and records the session. A subsequent start can reuse the recorded session only after validating that the recorded process still has the expected identity and that the configured workspace and app directory match its launch record. A configuration mismatch is rejected rather than starting a duplicate session.
+`start APP` checks for an installed bundle and reuses a healthy matching recorded session. Before a new launch it checks running app executable paths across profiles and ordinary GUI instances; by default another instance is rejected. Explicit `--allow-multiple` permits an intentional parallel session. It then creates an isolated profile, starts the app with its local control option, waits for the listener, and records the session. A subsequent start can reuse the recorded session only after validating that the recorded process still has the expected identity and that the configured workspace and app directory match its launch record. A configuration mismatch is rejected rather than starting a duplicate session.
 
 The bridge does not take over an application that was started normally. This prevents a command from unexpectedly operating on a person's existing desktop session.
 
-Lifecycle operations and calls for the same app are serialized with a per-session lock. This prevents competing bridge processes from changing launch or stop state concurrently. It cannot prevent interaction with a window by a person.
+Lifecycle operations and calls for the same app are serialized with a per-session lock. Starts additionally hold one stable private per-user/app lock under `~/Library/Application Support/artcraft-bridge/launch-locks`, independent of a custom state directory. This prevents concurrent bridge starts across separate state roots from bypassing duplicate discovery. External tools and manual launches do not participate in that lock; window interaction can still race bridge operations.
 
 ## Request transport
 
@@ -146,3 +146,5 @@ Unit tests cover the bridge behavior without requiring the desktop apps. A full 
 - No HTTP, hosted, or remote-control API.
 - No PyPI publication.
 - No claim of an official ArtCraft or Recraft affiliation.
+
+Version 0.4.0 adds duplicate-launch prevention and a separate dependency-free rocket example. The rocket example writes a nonconvex radial mesh and STL outside the CADCraft kernel and roundtrips its faces through CADCraft. It does not change the convex-only core exporter. See [eight live workflows](app-tests.md) and [current verification](verification.md).

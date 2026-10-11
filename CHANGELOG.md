@@ -4,6 +4,19 @@ All changes that affect users are recorded here. Versions follow the policy in [
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-11
+
+### Changed
+
+- Refuse duplicate app launches by default across state directories and ordinary GUI instances. Intentional parallel sessions require `--allow-multiple` or Python `allow_multiple=True`.
+- Serialize bridge starts through a per-user/app launch lock independent of session state. Existing healthy same-state sessions remain reusable; unknown instances are never adopted or stopped.
+
+### Added
+
+- Standard-library rocket example with CADCraft save/reopen/readback and closed nonconvex mesh STL output; the core convex exporter remains unchanged.
+- Live workflow reports for all eight apps, original print/collage/vector/grading previews, motion/video examples and rocket visualization.
+- Duplicate-launch regression tests and rocket topology/serialization tests.
+
 ### Documentation
 
 - Clarified ArtCraft Bridge as a provider-independent local CLI/Python bridge for AI agents, including Codex usage, integration paths, verified workflows and AI integration FAQ.

@@ -1,0 +1,33 @@
+{
+  "model": "Stylized rocket",
+  "units": "mm",
+  "height": 112,
+  "hull_diameter": 28,
+  "fin_span": 64,
+  "fins": 4,
+  "triangles": 2560,
+  "vertices": 1282,
+  "watertight": true,
+  "consistent_winding": true,
+  "connected_components": 1,
+  "euler_number": 2,
+  "volume_mm3": 53389.16254078238,
+  "bounds_mm": [
+    [
+      -32.0,
+      -32.0,
+      0.0
+    ],
+    [
+      32.0,
+      32.0,
+      112.0
+    ]
+  ],
+  "cadcraft_save_reopen_identical": true,
+  "native_brep": false,
+  "pipeline": "Parametric radial mesh -> CADCraft 3DFACE import -> save/reopen/readback -> STL",
+  "preview": "Independent 3D visualization of the CADCraft readback mesh; CADCraft displays plan view",
+  "public_example_reexecuted": true,
+  "public_example_independent_stl_verified": true
+}

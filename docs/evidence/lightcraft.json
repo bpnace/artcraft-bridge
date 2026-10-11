@@ -1,0 +1,20 @@
+{
+  "app": "LightCraft",
+  "version": "0.6.0",
+  "passed": true,
+  "actions": [
+    "create persistent library",
+    "copy import",
+    "develop controls",
+    "PNG JPEG export",
+    "quit restart",
+    "reopen library",
+    "identical persisted develop settings"
+  ],
+  "photos": 1,
+  "files": [
+    "outputs/after-hours-graded.png",
+    "outputs/after-hours-graded.jpg",
+    "outputs/after-hours-library"
+  ]
+}

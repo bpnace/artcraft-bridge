@@ -2,15 +2,15 @@
 
 **ArtCraft Bridge connects AI agents and local automation scripts to installed ArtCraft creative applications on macOS.** Its command-line interface and Python API let an agent discover app commands, inspect documents, execute supported operations and export files through local control interfaces. It is open-source, MIT-licensed and experimental.
 
-Use it to give an AI coding agent a practical interface to CADCraft, DesignCraft, PhotoCraft, VectorCraft, FilmCraft, LightCraft, EffectCraft and PdfCraft. Verified examples include document creation in DesignCraft and CADCraft geometry workflows with DXF persistence and bridge-assisted STL export.
+Use it to give an AI coding agent a practical interface to CADCraft, DesignCraft, PhotoCraft, VectorCraft, FilmCraft, LightCraft, EffectCraft and PdfCraft. Verified examples cover all eight apps: print layout, layered photo collage, vector editing, color grading, short video/motion exports, PDF persistence and CAD meshes with bridge-assisted STL export.
 
-Documentation updated 2026-10-11. Current bridge version **0.3.0**.
+Documentation updated 2026-10-11. Current bridge version **0.4.0**.
 
 > Independent automation for ArtCraft Crafting Apps. This project is not affiliated with ArtCraft and does not use the Recraft cloud image service.
 
 ## Status and scope
 
-Version `0.3.0` is experimental. It requires macOS, Python 3.9 or newer, and installed ArtCraft desktop apps. Its runtime uses only the Python standard library.
+Version `0.4.0` is experimental. It requires macOS, Python 3.9 or newer, and installed ArtCraft desktop apps. Its runtime uses only the Python standard library.
 
 The bridge does not provide an MCP registration, a web API, a hosted service, or a PyPI package. Agents and scripts invoke its shell command directly. The installed apps perform their document operations. The optional CAD mesh extension computes convex extrusion and STL locally in the bridge; it makes no internet request.
 
@@ -73,13 +73,54 @@ drawing = bridge.call("cadcraft", "drawing.inspect", {"entities": True, "limit":
 
 ## Which AI-agent workflows have actually been tested?
 
-| Workflow | Verified result | Reproducible evidence |
-| --- | --- | --- |
-| DesignCraft document automation | Create an A4 document, insert text, inspect it, save a native document and render PNG. | [Document example](#command-reference) and [verification record](docs/verification.md). |
-| CADCraft 3D wireframe automation | Create a 40 mm XYZ cube, save/reopen DXF and verify its 12 edges and 8 vertices. | [Cube example](examples/cadcraft_cube.py) and [geometry report](docs/cadcraft-cube-verification.json). |
-| CADCraft profile-to-STL workflow | Create a profile in CADCraft, extrude in the bridge, roundtrip triangular DXF faces through CADCraft and export a closed-volume STL. | [Solid example](examples/cadcraft_solid.py) and [independent STL verification](docs/cadcraft-solid-verification.json). |
+**All eight apps completed representative live creative workflows on macOS on 2026-10-11.** Native save/reopen and exports were checked, rather than relying only on command catalogs. See [step-by-step operation examples and individual test records](docs/app-tests.md).
 
-These examples demonstrate local agent-driven creative automation. The STL workflow uses the bridge's convex mesh extension; CADCraft 0.5.0 has no native BRep solid kernel or STL exporter. FilmCraft and EffectCraft command discovery has been tested, but this repository does not yet demonstrate a complete video-editing workflow.
+| App | Verified result | Evidence |
+| --- | --- | --- |
+| DesignCraft | A3 print poster, 19 editable objects, no text overflow, 3 mm bleed and embedded fonts | [Report](docs/evidence/designcraft.json) |
+| PhotoCraft | Architecture collage, 18 editable layers, perspective transform and mask; identical reopened PNG | [Report](docs/evidence/photocraft.json) |
+| VectorCraft | SVG import, native shape/color edit, 11 objects; PNG/SVG/PDF export | [Report](docs/evidence/vectorcraft.json) |
+| LightCraft | Photo import and grading; PNG/JPEG exports and settings retained after restart | [Report](docs/evidence/lightcraft.json) |
+| FilmCraft | Four-second 720p H.264 graphic clip with native dissolves; all 96 frames decoded | [Report](docs/evidence/filmcraft.json) · [Video](docs/media/filmcraft-after-hours.mp4) |
+| EffectCraft | Four-second 720p keyframed animation; 96 distinct decoded frames | [Report](docs/evidence/effectcraft.json) · [Video](docs/media/effectcraft-after-hours.mp4) |
+| CADCraft | Closed block and four-fin rocket meshes; DXF roundtrip and independently checked STL | [Block](docs/evidence/cadcraft.json) · [Rocket](docs/evidence/rocket.json) |
+| PdfCraft | PDF open/rotate/save/reopen, retained text and restored orientation | [Report](docs/evidence/pdfcraft.json) |
+
+### Print design and photo collage
+
+| DesignCraft — native A3 poster | PhotoCraft — layered architecture collage |
+| --- | --- |
+| ![A3 poster created in DesignCraft with original geometric artwork](docs/images/app-tests/designcraft.png) | ![18-layer photo collage composed in PhotoCraft](docs/images/app-tests/photocraft.png) |
+
+The print export requested PDF/X-4; trim, bleed, font embedding and output intent were checked, but formal PDF/X conformance validation was not run. The collage source photograph was generated with ImageGen; its composition, masks, transforms, shapes and text were edited in PhotoCraft.
+
+### Vector, grading, video, motion and PDF examples
+
+| VectorCraft — native vector edit | LightCraft — graded collage |
+| --- | --- |
+| ![VectorCraft orbit graphic](docs/images/app-tests/vectorcraft.png) | ![Collage with LightCraft exposure and color adjustments](docs/images/app-tests/lightcraft.jpg) |
+| **FilmCraft — dissolves** | **EffectCraft — animated orbit** |
+| ![Frame from the actual FilmCraft H.264 export](docs/images/app-tests/filmcraft.png) | ![EffectCraft composition preview](docs/images/app-tests/effectcraft.png) |
+| **PdfCraft — saved PDF** | **CADCraft — closed-volume STL** |
+| ![Native PdfCraft window showing the saved test poster](docs/images/app-tests/pdfcraft.png) | ![Independent preview of the CADCraft roundtripped closed block mesh](docs/images/cadcraft-solid-stl.png) |
+
+The videos are short graphics workflows without audio. These tests do not verify every app feature, all import/export formats or arbitrary media editing. CADCraft 0.5.0 has no native BRep kernel, boolean solids, shaded 3D viewport or STL exporter; mesh construction/serialization is performed outside its kernel.
+
+### Rocket model — CADCraft save/reopen and STL
+
+![Independent 3D visualization of the rocket mesh read back from CADCraft](docs/images/app-tests/rocket.png)
+
+**ORBIT / 01** is a 112 mm tall rocket with a 28 mm hull, a nose, a stylized closed nozzle and four integrated fins spanning 64 mm. Its 2,560 triangles form one connected watertight outward-oriented mesh. CADCraft saved and reopened all coordinates unchanged. Independent STL validation confirmed the closed boundary and approximately 53,389.16 mm³ volume.
+
+The image is an independent visualization of the actual CADCraft readback mesh; CADCraft itself displays the faces in plan view. Preview colors are illustrative and are not stored in STL. This is a decorative closed mesh, not a native BRep object.
+
+Reproduce it with the standard-library-only [rocket example](examples/cadcraft_rocket.py), using a fresh workspace and no other CADCraft instance:
+
+```bash
+python3 examples/cadcraft_rocket.py --workspace "$PWD/rocket-demo"
+```
+
+The example writes `outputs/rocket-source.dxf`, `outputs/rocket-cadcraft.dxf`, `outputs/rocket.stl` and `outputs/verification.json`. It exports STL from reopened CADCraft face data and leaves the saved drawing open. Import STL as millimetres because STL carries no unit field. The rocket is a separate nonconvex example; the bridge's general [convex exporter scope](#supported-scope) is unchanged. See [recorded rocket checks](docs/evidence/rocket.json) or [download the verified STL](docs/models/rocket.stl).
 
 ## AI integration FAQ
 
@@ -97,7 +138,7 @@ The bridge's local control connection does not require an AI-provider API key. Y
 
 ### Can AI agents create 3D objects and export STL with CADCraft?
 
-The tested bridge-assisted workflow produces a closed convex triangle mesh from a straight closed CADCraft profile and exports STL. It verifies the mesh after CADCraft saves and reopens the DXF. Native CADCraft solid modeling, booleans and a general-purpose CAD kernel are not provided; see [supported mesh scope](#supported-scope).
+The core exporter produces a closed convex triangle mesh from a straight closed CADCraft profile and exports STL. The separate rocket example builds a nonconvex radial mesh and roundtrips it through CADCraft before writing STL. It verifies the mesh after CADCraft saves and reopens the DXF. Native CADCraft solid modeling, booleans and a general-purpose CAD kernel are not provided; see [supported mesh scope](#supported-scope).
 
 ## Install from source
 
@@ -142,7 +183,7 @@ Global options must precede the subcommand. Environment variables provide the sa
 | `--workspace DIR` | `ARTCRAFT_BRIDGE_WORKSPACE` | Current directory | Directory where app-visible output is created. |
 | `--state-dir DIR` | `ARTCRAFT_BRIDGE_STATE_DIR` | `~/Library/Application Support/artcraft-bridge` | Private bridge state, profiles, tokens, locks, and launch records. |
 
-Command-line options override environment variables. A managed session is tied to its launch workspace and app directory; incompatible reuse is rejected. Use the original options to stop it, or a separate `--state-dir` for independent configurations. Use a dedicated workspace for automation runs. The bridge creates `outputs/` inside that workspace for files it writes or exposes to apps.
+Command-line options override environment variables. A managed session is tied to its launch workspace and app directory; incompatible reuse is rejected. Use its original options to reuse or stop it. A separate `--state-dir` separates state but does not bypass the default duplicate-instance guard; intentional parallel launches also require `--allow-multiple`. Use a dedicated workspace for automation runs. The bridge creates `outputs/` inside that workspace for files it writes or exposes to apps.
 
 Example with explicit, portable locations:
 
@@ -157,7 +198,7 @@ Operational commands write structured JSON to standard output. Errors are JSON o
 | Command | Result |
 | --- | --- |
 | `inventory` | Lists supported apps and reports whether their bundles are present under `--apps-dir`. |
-| `start APP` | Starts an isolated managed app session, or reuses a healthy session that this bridge previously started. |
+| `start APP` | Reuses a healthy recorded session, or starts one when no other instance is running. Use `--allow-multiple` only for intentional parallel sessions. |
 | `inspect APP` | Reads the current UI state from a managed session. |
 | `commands APP` | Returns the app's current command catalog. Query this before invoking app-specific actions. |
 | `call APP METHOD [JSON]` | Sends an app method with an optional JSON object parameter. |
@@ -230,7 +271,7 @@ bridge call designcraft ui.render --params-file outputs/design-render.json
 bridge stop designcraft
 ```
 
-The `app.save` and `ui.render` methods were also exercised against the prototype. `ui.render` writes the first page as a PNG preview. No edited document or generated image is bundled in this repository.
+The `app.save` and `ui.render` methods were also exercised against the prototype. `ui.render` writes the first page as a PNG preview. Selected checked previews and path-free test reports are included in this repository; private native projects and runtime state are excluded.
 
 ## PdfCraft requires an explicit portable copy
 
@@ -249,6 +290,23 @@ artcraft-bridge stop pdfcraft --allow-empty-pdf-termination
 ```
 
 Before sending `SIGTERM`, the bridge reads PdfCraft state and refuses to continue unless `documents` is exactly `[]`; it also verifies that the process is the bridge-owned process. This is a safety check, not a transaction: a person can open or change a document after the check and before termination. Do not interact with the PdfCraft window during that short interval.
+
+## Why did multiple app instances open?
+
+Before 0.4.0, launch discovery and locking were limited to the chosen `--state-dir`. Each separate test directory could therefore launch another process of the same app. Direct executable launches did not reuse ordinary app windows. PdfCraft additionally copied its bundle into a fresh portable profile, so repeated sessions could leave several app bundles visible to macOS even after their processes stopped.
+
+Version **0.4.0** checks running ArtCraft executable paths before starting and serializes bridge launches through one private per-user/app lock independent of the selected state directory. A healthy session in the same state directory is reused. Otherwise, an already-running instance blocks a new launch, without being adopted or terminated. Reuse its original workspace/state options, or close it normally before starting a different session.
+
+For intentional parallel tests only:
+
+```bash
+artcraft-bridge --workspace "$PWD/isolated-demo" --state-dir "$PWD/isolated-state" \
+  start cadcraft --allow-multiple
+```
+
+Python callers use `bridge.start("cadcraft", allow_multiple=True)`. The guard observes executable paths via `ps`; it cannot prevent a person or another tool from starting an app outside the bridge at the same moment. Unknown or unsaved windows are never closed automatically. [Live guard verification](docs/evidence/session-guard.json) confirms same-state reuse and cross-state refusal without an additional process. The lock lives under `~/Library/Application Support/artcraft-bridge/launch-locks`, even when custom session state is used.
+
+`stop` retains app profiles and PdfCraft portable copies so documents and preferences are not discarded. The documented live tests explicitly removed their disposable PdfCraft copies after confirming the owned process was stopped, while preserving data separately. Do not delete or terminate a running copy to tidy the app list.
 
 ## Safety and behavior
 
@@ -307,7 +365,7 @@ From an installed source checkout, use a fresh dedicated workspace and a new man
 python3 examples/cadcraft_solid.py --workspace "$PWD/cadcraft-solid-demo"
 ```
 
-The example saves the original profile, exports a bridge STL and 3DFACE DXF, imports the latter into CADCraft, saves/reopens it and exports `outputs/block-cadcraft-reopened.stl` from the reopened faces. It leaves the saved mesh drawing open. It refuses nonempty output directories and reused managed sessions. Use `--state-dir DIR` consistently for independent sessions.
+The example saves the original profile, exports a bridge STL and 3DFACE DXF, imports the latter into CADCraft, saves/reopens it and exports `outputs/block-cadcraft-reopened.stl` from the reopened faces. It leaves the saved mesh drawing open. It refuses nonempty output directories and reused managed sessions. Use `--state-dir DIR` consistently for session state. Close other CADCraft instances first; parallel sessions require explicit `--allow-multiple`.
 
 ### Use your own profile
 
