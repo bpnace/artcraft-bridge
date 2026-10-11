@@ -16,10 +16,10 @@ Supported app identifiers are:
 
 ## Install from source
 
-Clone the repository from its eventual public location, or download and unpack its source ZIP. The URL below is a placeholder, not a published remote.
+Clone the repository, or download and unpack its source ZIP.
 
 ```sh
-git clone <repository-url> recraft-bridge
+git clone https://github.com/bpnace/recraft-bridge.git
 cd recraft-bridge
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade "pip>=21.3" "setuptools>=61" wheel
@@ -201,7 +201,7 @@ See [the architecture document](docs/architecture.md) for the session, transport
 
 ## License
 
-The license has not yet been selected. This repository does not grant a license until a license file is added; the licensing terms may change before publication.
+The bridge code and documentation are licensed under the [MIT License](LICENSE). ArtCraft applications and any imported or exported media retain their own licensing terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Further documentation
 

@@ -7,6 +7,7 @@ name = "recraft-bridge"
 dynamic = ["version"]
 description = "Independent local desktop automation bridge for ArtCraft Crafting Apps"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
 authors = [{name = "Recraft Bridge contributors"}]
 classifiers = [
@@ -25,3 +26,7 @@ where = ["src"]
 
 [tool.setuptools.dynamic]
 version = {attr = "recraft_bridge.__version__"}
+
+[project.urls]
+Repository = "https://github.com/bpnace/recraft-bridge"
+Issues = "https://github.com/bpnace/recraft-bridge/issues"

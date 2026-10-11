@@ -15,6 +15,7 @@ All changes that affect users are recorded here. Versions follow the policy in [
 - Process identity validation and a shared lifecycle lock for calls, starts and stops.
 - Explicit opt-in for PdfCraft portable bundle copying/signing and for empty-session signal termination.
 - Params-file input, installable CLI, semantic version policy and automated tests.
+- MIT licensing for the bridge code and documentation.
 
 ### Verification
 
