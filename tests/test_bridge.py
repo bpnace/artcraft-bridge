@@ -11,7 +11,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from recraft_bridge import bridge as b
+from artcraft_bridge import bridge as b
 
 
 class BridgeTests(unittest.TestCase):
@@ -209,16 +209,16 @@ class BridgeTests(unittest.TestCase):
     def test_cli_params_file(self):
         path = self.root / 'params.json'
         path.write_text('{"page": 1}')
-        with patch('sys.argv', ['recraft-bridge', 'call', 'designcraft', 'ui.inspect', '--params-file', str(path)]), patch.object(b, 'call', return_value={}) as call, patch('sys.stdout', new_callable=io.StringIO):
+        with patch('sys.argv', ['artcraft-bridge', 'call', 'designcraft', 'ui.inspect', '--params-file', str(path)]), patch.object(b, 'call', return_value={}) as call, patch('sys.stdout', new_callable=io.StringIO):
             self.assertEqual(b.main(), 0)
         self.assertEqual(call.call_args.args[2], {'page': 1})
 
     def test_cli_null_params_rejected(self):
-        with patch('sys.argv', ['recraft-bridge', 'call', 'designcraft', 'ui.inspect', 'null']), patch('sys.stderr', new_callable=io.StringIO):
+        with patch('sys.argv', ['artcraft-bridge', 'call', 'designcraft', 'ui.inspect', 'null']), patch('sys.stderr', new_callable=io.StringIO):
             self.assertEqual(b.main(), 1)
 
     def test_cli_conflicting_params_rejected(self):
-        with patch('sys.argv', ['recraft-bridge', 'call', 'designcraft', 'ui.inspect', '{}', '--params-file', 'params.json']), patch('sys.stderr', new_callable=io.StringIO):
+        with patch('sys.argv', ['artcraft-bridge', 'call', 'designcraft', 'ui.inspect', '{}', '--params-file', 'params.json']), patch('sys.stderr', new_callable=io.StringIO):
             self.assertEqual(b.main(), 1)
 
 

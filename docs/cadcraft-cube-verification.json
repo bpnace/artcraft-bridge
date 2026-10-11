@@ -1,0 +1,36 @@
+{
+  "app": "CADCraft",
+  "app_version": "0.5.0",
+  "before_save": {
+    "entities": 12,
+    "entity_type": "3D Polyline",
+    "vertices": 8,
+    "edge_length_mm": 40.0,
+    "distinct_z_planes": 8,
+    "vertex_degree": 3,
+    "min_edge_length": 39.999999959032245,
+    "max_edge_length": 39.999999991806455,
+    "geometry_verified": true
+  },
+  "after_reopen": {
+    "entities": 12,
+    "entity_type": "3D Polyline",
+    "vertices": 8,
+    "edge_length_mm": 40.0,
+    "distinct_z_planes": 8,
+    "vertex_degree": 3,
+    "min_edge_length": 39.999999959032245,
+    "max_edge_length": 39.999999991806455,
+    "geometry_verified": true
+  },
+  "dxf_reopened": true,
+  "files": {
+    "drawing": "artcraft-cube-40.dxf",
+    "preview": "artcraft-cube-40.png"
+  },
+  "render": {
+    "width": 1400,
+    "height": 1000
+  },
+  "model_kind": "3D wireframe, not a solid or a surface mesh"
+}

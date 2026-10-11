@@ -4,6 +4,20 @@ All changes that affect users are recorded here. Versions follow the policy in [
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-11
+
+### Changed
+
+- Renamed the project and repository from `recraft-bridge` to `artcraft-bridge` to identify the correct ArtCraft application suite.
+- Renamed the Python package to `artcraft_bridge`, CLI to `artcraft-bridge`, environment variables to `ARTCRAFT_BRIDGE_*`, and default private state directory to `artcraft-bridge`. These are breaking changes; see the migration section in the README.
+- Kept existing `v0.1.0` history and release unchanged.
+
+### Added
+
+- Reproducible CADCraft 0.5.0 3D wireframe cube example, native rendering and DXF save/reopen verification.
+- Geometric checks for twelve 40 mm edges, eight XYZ vertices, connectivity and preservation of Z coordinates.
+- README evidence and a CADCraft-generated preview. This verifies 3D polylines, not solid modeling or extrusion.
+
 ## [0.1.0] - 2026-10-11
 
 ### Added

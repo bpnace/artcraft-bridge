@@ -4,7 +4,7 @@ Use Python 3.9 or later. Runtime dependencies are limited to Python's standard l
 
 ```sh
 PYTHONPATH=src python3 -m unittest discover -s tests -v
-PYTHONPATH=src python3 -m recraft_bridge --help
+PYTHONPATH=src python3 -m artcraft_bridge --help
 python3 scripts/check_version.py
 ```
 

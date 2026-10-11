@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`recraft-bridge` is a local macOS command-line adapter between a shell caller and installed ArtCraft Crafting Apps. It makes a small, explicit lifecycle available to scripts and agents:
+`artcraft-bridge` is a local macOS command-line adapter between a shell caller and installed ArtCraft Crafting Apps. It makes a small, explicit lifecycle available to scripts and agents:
 
 1. Start a bridge-owned app session.
 2. Discover its state and command catalog.
@@ -15,7 +15,7 @@ It is not a remote service, an MCP server, or a replacement for the apps' own au
 
 ```mermaid
 flowchart LR
-    Caller[Shell, script, or agent] --> CLI[recraft-bridge CLI]
+    Caller[Shell, script, or agent] --> CLI[artcraft-bridge CLI]
     CLI --> Session[Session manager]
     CLI --> Workspace[Workspace outputs]
     Session --> State[Private state directory]
@@ -31,7 +31,7 @@ flowchart LR
 | Session manager | Creates and reuses bridge-owned sessions, serializes lifecycle operations, and validates process identity. |
 | Per-app adapter | Selects the app's control protocol, authentication sequence, and app-specific lifecycle behavior. |
 | Workspace | Holds caller-visible output under `outputs/`. It defaults to the current directory. |
-| State directory | Holds private session records, profile data, token material, locks, and logs. It defaults to `~/Library/Application Support/recraft-bridge`. |
+| State directory | Holds private session records, profile data, token material, locks, and logs. It defaults to `~/Library/Application Support/artcraft-bridge`. |
 | Installed app | Runs with its normal local control implementation and performs the actual document operation. |
 
 ## Configuration boundary
@@ -42,9 +42,9 @@ The bridge resolves three roots before it starts an app.
 | --- | --- | --- |
 | Apps directory | `/Applications` | Locates the installed ArtCraft application bundles. |
 | Workspace | Current directory | Provides the caller's output location and automation working context. |
-| State directory | `~/Library/Application Support/recraft-bridge` | Separates bridge runtime state from the project workspace. |
+| State directory | `~/Library/Application Support/artcraft-bridge` | Separates bridge runtime state from the project workspace. |
 
-`--apps-dir`, `--workspace`, and `--state-dir` take precedence over `RECRAFT_BRIDGE_APPS_DIR`, `RECRAFT_BRIDGE_WORKSPACE`, and `RECRAFT_BRIDGE_STATE_DIR` respectively. Callers should keep the state directory private because it can contain app-control tokens.
+`--apps-dir`, `--workspace`, and `--state-dir` take precedence over `ARTCRAFT_BRIDGE_APPS_DIR`, `ARTCRAFT_BRIDGE_WORKSPACE`, and `ARTCRAFT_BRIDGE_STATE_DIR` respectively. Callers should keep the state directory private because it can contain app-control tokens.
 
 ## Session lifecycle
 
@@ -128,7 +128,7 @@ The bridge does not claim that an app cannot access other files, contact a netwo
 
 The predecessor prototype successfully connected to all eight target apps, collected their catalogs, and shut down the bridge-managed instances. It observed the following versions and catalog counts: PhotoCraft 0.7.0 (858), DesignCraft 0.6.0 (555), VectorCraft 0.9.0 (992), FilmCraft 0.6.0 (693), LightCraft 0.6.0 (453), EffectCraft 0.8.0 (669), PdfCraft 0.6.0 (185), and CADCraft 0.5.0 (341).
 
-Only the DesignCraft flow that created an A4 document, inserted text, read it back, saved it, and rendered a PNG preview was exercised as an end-to-end document operation. Catalog entries for all other functions are discovery evidence, not a statement that every action was tested.
+Only the DesignCraft flow that created an A4 document, inserted text, read it back, saved it, and rendered a PNG preview was exercised as an end-to-end document operation. Version 0.2.0 also verifies CADCraft 3D polyline cube creation, DXF save/reopen and rendering, as detailed in [verification.md](verification.md). Other catalog entries remain discovery evidence, not a statement that every action was tested.
 
 ## Validation
 
@@ -140,7 +140,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 Unit tests cover the bridge behavior without requiring the desktop apps. A full app integration run still needs the target ArtCraft apps installed on a macOS host and should use a dedicated workspace and state directory.
 
-## Non-goals for v0.1.0
+## Non-goals for v0.2.0
 
 - No MCP server registration or native tool registration.
 - No HTTP, hosted, or remote-control API.

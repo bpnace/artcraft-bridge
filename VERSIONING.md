@@ -1,6 +1,6 @@
 # Versioning and releases
 
-The initial version is **0.1.0**. It is experimental. This repository uses `MAJOR.MINOR.PATCH` version numbers.
+The current version is **0.2.0**. The original release was 0.1.0. It is experimental. This repository uses `MAJOR.MINOR.PATCH` version numbers.
 
 ## Policy
 
@@ -11,7 +11,7 @@ The initial version is **0.1.0**. It is experimental. This repository uses `MAJO
 
 ## Source of truth
 
-The package version is `src/recraft_bridge/__init__.py`. `pyproject.toml` obtains package metadata dynamically from it. The `VERSION` file and versioned changelog heading must match. Check with
+The package version is `src/artcraft_bridge/__init__.py`. `pyproject.toml` obtains package metadata dynamically from it. The `VERSION` file and versioned changelog heading must match. Check with
 
 ```sh
 python3 scripts/check_version.py
@@ -29,4 +29,4 @@ Git tags are `vMAJOR.MINOR.PATCH`, for example `v0.1.0`. A version file or chang
 6. Commit the reviewed changes and tag that exact commit. Publish only the reviewed refs and artifacts, using the maintainer's publication approval process.
 7. Verify the public repository, tag and downloadable artifacts from an anonymous session.
 
-A future automated release workflow should enforce these steps. Version 0.1.0 has no automatic PyPI or GitHub release publishing job.
+A future automated release workflow should enforce these steps. Version 0.2.0 has no automatic PyPI or GitHub release publishing job.

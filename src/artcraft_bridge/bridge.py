@@ -18,9 +18,9 @@ import uuid
 
 from . import __version__
 
-BASE = Path(os.environ.get("RECRAFT_BRIDGE_WORKSPACE", str(Path.cwd()))).expanduser().resolve()
-RUNTIME = Path(os.environ.get("RECRAFT_BRIDGE_STATE_DIR", str(Path.home() / "Library" / "Application Support" / "recraft-bridge"))).expanduser().resolve()
-APPS_DIR = Path(os.environ.get("RECRAFT_BRIDGE_APPS_DIR", "/Applications")).expanduser().resolve()
+BASE = Path(os.environ.get("ARTCRAFT_BRIDGE_WORKSPACE", str(Path.cwd()))).expanduser().resolve()
+RUNTIME = Path(os.environ.get("ARTCRAFT_BRIDGE_STATE_DIR", str(Path.home() / "Library" / "Application Support" / "artcraft-bridge"))).expanduser().resolve()
+APPS_DIR = Path(os.environ.get("ARTCRAFT_BRIDGE_APPS_DIR", "/Applications")).expanduser().resolve()
 
 
 def configure(workspace=None, state_dir=None, apps_dir=None):

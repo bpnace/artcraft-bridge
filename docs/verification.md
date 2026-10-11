@@ -1,4 +1,20 @@
-# Verification evidence for 0.1.0
+# Verification evidence for 0.2.0
+
+## CADCraft live 3D geometry test
+
+On 2026-10-11 the renamed package created a 40 mm cube in CADCraft 0.5.0 using twelve `3dpoly` commands. It read `drawing.inspect`, saved via `app.save`, reopened the DXF via `app.open`, repeated the geometry checks and rendered a native PNG via `ui.render`.
+
+The checks verify twelve 3D polyline entities, eight distinct XYZ vertices, the exact intended rotated cube edges, edge lengths within 2 × 10⁻⁶ mm of 40 mm and degree three at every vertex. Eight distinct Z levels survive reopening. The DXF header records millimetres (`$INSUNITS = 4`).
+
+The runnable example is [examples/cadcraft_cube.py](../examples/cadcraft_cube.py). Its path-free result is [cadcraft-cube-verification.json](cadcraft-cube-verification.json), and its native preview is [images/cadcraft-cube.png](images/cadcraft-cube.png). Six automated example checks cover valid geometry, flattened Z, wrong entity types, missing edges, duplicate edges and refusal to edit a reused session. All 33 repository tests pass.
+
+This proves creation and persistence of 3D wireframe geometry. It does not prove solid modeling, extrusion, a watertight mesh, STL output or a general 3D camera. The target command catalog does not expose box/extrusion/solid commands. CADCraft's render is an XY projection of the rotated spatial geometry.
+
+## Renaming checks
+
+The package, Python module, CLI, environment-variable prefix, repository links and default state directory now use `artcraft-bridge` / `artcraft_bridge` / `ARTCRAFT_BRIDGE_*`. The version is `0.2.0`. Tests, installed CLI and package builds are checked after the rename. Historical v0.1.0 artifacts are retained.
+
+## Historical verification for 0.1.0
 
 The reusable package was tested on macOS with Python 3.9 on 2026-10-11. This is a compatibility observation from one Mac, not a guarantee for every ArtCraft build or every command.
 

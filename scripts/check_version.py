@@ -5,7 +5,7 @@ import sys
 
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / "src"))
-from recraft_bridge import __version__
+from artcraft_bridge import __version__
 
 version = (root / "VERSION").read_text().strip()
 assert re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?", version), "Invalid version"
