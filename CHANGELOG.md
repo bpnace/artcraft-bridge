@@ -13,7 +13,7 @@ All changes that affect users are recorded here. Versions follow the policy in [
 
 ### Verified limitations
 
-- An ordinary VectorCraft GUI session cannot gain a control listener after startup. Its existing tab is selected without reopening; managed VectorCraft opening guards are tested against protocol fixtures.
+- VectorCraft managed path reuse verified live after a user-authorized regular restart: two saved documents restored, three repeated opens from an inactive tab, zero duplicates. An ordinary GUI session cannot enable its control listener after startup.
 - VectorCraft refuses a new open if a pathless tab prevents proving that the file is not already open. Save pathless documents before a new guarded open; select an existing tab directly to continue editing it.
 - Native calls and repeated document creation bypass opening guards. FilmCraft/EffectCraft reload tests cover saved projects only.
 

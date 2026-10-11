@@ -40,17 +40,30 @@
       "test_duplicate_removed": true,
       "existing_tab_activations": 3,
       "extra_launch_attempts_refused": 3,
-      "managed_guard_live_tested": false,
+      "managed_guard_live_tested": true,
       "managed_guard_regression_tests": 14,
       "unmanaged_open_attempts_refused": 3,
       "additional_tab_activations_after_fix": 3,
-      "final_process_unchanged": true
+      "final_process_unchanged": true,
+      "managed_live_restart": {
+        "prior_documents_saved": 2,
+        "documents_restored": 2,
+        "regular_restart": true,
+        "control_connected": true,
+        "repeated_guarded_opens": 3,
+        "inactive_tab_selected_before_each_call": true,
+        "tabs_before": 2,
+        "tabs_after": 2,
+        "duplicates_created": 0,
+        "instances": 1,
+        "main_windows": 1,
+        "process_unchanged_during_repeated_open": true
+      }
     }
   },
   "automated_tests_passed": 106,
   "limits": [
     "Managed CAD/Photo/Pdf/Vector supported opening routes only",
-    "VectorCraft managed opening guard uses official-schema protocol fixtures; existing unmanaged GUI listener cannot be enabled at runtime",
     "Pathless VectorCraft documents refuse uncertain opens",
     "Saved FilmCraft/EffectCraft project reload tests only",
     "Creation operations and native file handoffs are not idempotent"
