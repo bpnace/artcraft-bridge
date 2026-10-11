@@ -4,6 +4,20 @@ All changes that affect users are recorded here. Versions follow the policy in [
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-11
+
+### Changed
+
+- CADCraft `call app.open` activates an already-open canonical file path instead of adding another tab. This changes open semantics, so the experimental minor version is increased.
+- CAD examples explicitly reload saved files, closing saved matching tabs before reopening. Dirty matching documents prevent reload.
+
+### Added
+
+- `open-document cadcraft PATH [--reload]`, raw `call ... --reload-document` and Python `call(..., reload_document=True)`.
+- Document-operation lock, reuse/reload regression tests and live single-tab evidence. The existing duplicate app-launch guard remains enabled.
+- Document-opening instructions for existing managed and ordinary GUI sessions.
+
+
 ## [0.4.0] - 2026-10-11
 
 ### Changed

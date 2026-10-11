@@ -121,7 +121,7 @@ def run(workspace, state_dir=None, allow_multiple=False):
     write_dxf(triangles, out / 'rocket-source.dxf')
     bridge.call('cadcraft', 'app.open', {'path': str(out / 'rocket-source.dxf')})
     bridge.call('cadcraft', 'app.save', {'path': str(out / 'rocket-cadcraft.dxf')})
-    bridge.call('cadcraft', 'app.open', {'path': str(out / 'rocket-cadcraft.dxf')})
+    bridge.call('cadcraft', 'app.open', {'path': str(out / 'rocket-cadcraft.dxf')}, reload_document=True)
     drawing = bridge.call('cadcraft', 'drawing.inspect', {'entities': True, 'limit': 10000})
     if len(drawing.get('entities', [])) != drawing.get('entityCount'):
         raise ValueError('Truncated CADCraft readback')

@@ -83,7 +83,7 @@ def run(workspace, state_dir=None):
     inspect = {"entities": True, "limit": 100}
     before = verify_drawing(bridge.call("cadcraft", "drawing.inspect", inspect))
     bridge.call("cadcraft", "app.save", {"path": str(dxf)})
-    bridge.call("cadcraft", "app.open", {"path": str(dxf)})
+    bridge.call("cadcraft", "app.open", {"path": str(dxf)}, reload_document=True)
     after = verify_drawing(bridge.call("cadcraft", "drawing.inspect", inspect))
     render = bridge.call("cadcraft", "ui.render", {"path": str(png), "width": 1400,
                                                    "height": 1000, "fit": True})

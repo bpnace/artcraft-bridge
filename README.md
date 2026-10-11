@@ -201,6 +201,7 @@ Operational commands write structured JSON to standard output. Errors are JSON o
 | `start APP` | Reuses a healthy recorded session, or starts one when no other instance is running. Use `--allow-multiple` only for intentional parallel sessions. |
 | `inspect APP` | Reads the current UI state from a managed session. |
 | `commands APP` | Returns the app's current command catalog. Query this before invoking app-specific actions. |
+| `open-document cadcraft PATH [--reload]` | Activates an existing file tab, or opens a new one; explicit reload refuses unsaved changes. |
 | `call APP METHOD [JSON]` | Sends an app method with an optional JSON object parameter. |
 | `call APP METHOD --params-file FILE` | Reads the JSON object parameter from `FILE`. Use this for nontrivial parameters and file paths. |
 | `stop APP` | Requests a safe stop for a session owned by this bridge. |
@@ -307,6 +308,70 @@ artcraft-bridge --workspace "$PWD/isolated-demo" --state-dir "$PWD/isolated-stat
 Python callers use `bridge.start("cadcraft", allow_multiple=True)`. The guard observes executable paths via `ps`; it cannot prevent a person or another tool from starting an app outside the bridge at the same moment. Unknown or unsaved windows are never closed automatically. [Live guard verification](docs/evidence/session-guard.json) confirms same-state reuse and cross-state refusal without an additional process. The lock lives under `~/Library/Application Support/artcraft-bridge/launch-locks`, even when custom session state is used.
 
 `stop` retains app profiles and PdfCraft portable copies so documents and preferences are not discarded. The documented live tests explicitly removed their disposable PdfCraft copies after confirming the owned process was stopped, while preserving data separately. Do not delete or terminate a running copy to tidy the app list.
+
+## Open new documents in an already-running app
+
+**Create or open another document in the existing app process.** A new design is a document operation, not a reason to launch another app. Keep existing documents open when the app supports tabs; save work before operations that replace the active drawing.
+
+### Existing bridge-managed session
+
+Reuse the session's original `--workspace` and `--state-dir` options. Query its live command catalog, then invoke the supported document-create or document-open method. Do not call `stop`, change state directories, or enable `--allow-multiple` to make another design.
+
+Since **0.5.0**, CADCraft `app.open` reuses an already-open canonical file path. The convenience command is:
+
+```bash
+artcraft-bridge --workspace "$SESSION_WORKSPACE" --state-dir "$SESSION_STATE_DIR" open-document cadcraft /absolute/path/to/model.dxf
+```
+
+Raw method form:
+
+```bash
+artcraft-bridge --workspace "$SESSION_WORKSPACE" --state-dir "$SESSION_STATE_DIR"   call cadcraft app.open --params-file open-document.json
+```
+
+`open-document.json` contains an absolute path to a saved drawing:
+
+```json
+{"path": "/absolute/path/to/car-cadcraft.dxf"}
+```
+
+An existing dirty tab is activated with its edits preserved. To deliberately reload from disk, use `open-document cadcraft PATH --reload`, raw `call cadcraft app.open --params-file FILE --reload-document`, or Python `call("cadcraft", "app.open", {"path": absolute_path}, reload_document=True)`. Reload requires an existing source file and saved matching tabs. It closes those tabs in descending index order, then opens the file once. Raw `app.open` paths must be absolute. This guard is specific to managed CADCraft; other apps retain their protocol behavior.
+
+Discovery, switching, closing and opening share a document-operation lock, including explicit-state Python calls, and one request deadline. No failed mutation is automatically retried. Reload is not transactional: a load failure after saved tabs close leaves their files on disk. Inspect before retrying. Manual GUI actions do not participate in the bridge lock.
+
+The live test found six saved copies of the seat file, removed five, and confirmed repeated opens and explicit reload retained one tab and the same app process. See [live document guard evidence](docs/evidence/document-guard.json).
+
+The car test reused the existing CADCraft process, saved and reopened the new drawing, and preserved the saved rocket on disk. This verifies process reuse; it does not claim CADCraft keeps every drawing in a separate tab. Creation methods differ between apps: use the live catalog instead of guessing a universal `document.new` command.
+
+### App opened normally from the desktop
+
+The CLI cannot attach its control protocol to an ordinary GUI process that has no control listener. Use that app's native **File → New Document** or **File → Open** action through desktop automation. The bridge's launch guard blocks an additional process; it does not turn the existing GUI into a managed session.
+
+For VectorCraft, the following macOS document handoff was tested while VectorCraft was already running:
+
+```bash
+open -a /Applications/VectorCraft.app /absolute/path/to/new-design.svg
+```
+
+Both SVGs appeared as editable document tabs in the same process. For DesignCraft, use the native **File → Open…** dialog for `.designcraft` files: the tested installed bundle rejected Finder/LaunchServices opening of that extension even though its own Open dialog loaded the native files successfully. In the dialog, **Command–Shift–G** accepts an absolute path; confirm navigation, then press Open. Wait for each dialog to appear and keep the intended app foreground before sending keys.
+
+### Verified desktop workflow, 2026-10-11
+
+| App | Result in existing process | Verification |
+| --- | --- | --- |
+| DesignCraft | SIGNAL and GRID LAB native A3 documents in two tabs | Both complete layouts rendered with shapes/text and “No Errors” status. |
+| VectorCraft | ORBIT CLUB and CITY DRIVE SVG documents in two tabs | Both complete compositions rendered as editable vectors. |
+| CADCraft | Basic car drawing opened, saved and reopened | 11,800 faces; one watertight connected mesh; 120 × 56 × 46 mm; STL checked independently. |
+
+Process IDs stayed unchanged throughout the test, and a final executable-path inventory found exactly one process per app. Desktop opening is an operator workflow; `open-document` targets managed CADCraft and does not attach to unmanaged GUI apps.
+
+### Why CADCraft shows a flat view of a 3D file
+
+In the tested installed CADCraft 0.5.0, the viewport draws face edges in the XY plane. Z coordinates are stored and survive save/reopen, but the view does not provide a working shaded 3D camera/orbit renderer. Looking down the Z axis makes the car look flat and overlaps edges at different heights.
+
+The car contains actual XYZ triangle coordinates, including a 46 mm height. Its STL is a closed 3D surface. The preview image was rendered independently from CADCraft's readback geometry; it is not a screenshot of CADCraft's viewport. The bridge generates the mesh and writes STL; CADCraft stores the imported `3DFACE` entities. This is a mesh workflow, not native parametric solid modelling.
+
+The upstream [known gaps](https://github.com/storytold/cadcraft/blob/main/docs/gaps.md) list missing 3D views, orbit, visual styles and rendering. A full interactive 3D view requires a separate mesh viewer or a future CADCraft implementation; zooming the current XY viewport does not add that capability.
 
 ## Safety and behavior
 

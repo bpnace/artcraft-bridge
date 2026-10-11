@@ -25,7 +25,7 @@ def run(workspace, state_dir=None):
     bridge.call('cadcraft','app.open',{'path':str(out/extrusion['files']['dxf'])})
     before=triangles_from_drawing(bridge.call('cadcraft','drawing.inspect',{'entities':True,'limit':100}))
     bridge.call('cadcraft','app.save',{'path':str(out/'block-cadcraft-saved.dxf')})
-    bridge.call('cadcraft','app.open',{'path':str(out/'block-cadcraft-saved.dxf')})
+    bridge.call('cadcraft','app.open',{'path':str(out/'block-cadcraft-saved.dxf')}, reload_document=True)
     reopened=bridge.call('cadcraft','drawing.inspect',{'entities':True,'limit':100})
     if before!=triangles_from_drawing(reopened):
         raise ValueError('CADCraft changed the triangle mesh after save/reopen')

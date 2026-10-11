@@ -216,7 +216,7 @@ def send(stream, request, request_id):
     return read_reply(stream, request_id)
 
 
-def call(app, method, params=None, timeout=20, state=None):
+def call(app, method, params=None, timeout=20, state=None, reload_document=False):
     params = {} if params is None else params
     if not isinstance(method, str) or not method or not isinstance(params, dict):
         raise BridgeError("Method must be a string and params a JSON object")
@@ -227,7 +227,65 @@ def call(app, method, params=None, timeout=20, state=None):
         runtime.mkdir(parents=True, exist_ok=True, mode=0o700)
         with (runtime / "launch.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            return call(app, method, params, timeout, state=load_state(app))
+            return call(app, method, params, timeout, state=load_state(app), reload_document=reload_document)
+    if reload_document and (app != "cadcraft" or method != "app.open"):
+        raise BridgeError("Document reload is supported only for CADCraft app.open")
+    if app == "cadcraft" and method == "app.open":
+        return _cad_open(params, timeout, state, reload_document)
+    return _request(app, method, params, timeout, state)
+
+
+def _cad_open(params, timeout, state, reload_document):
+    """Serialize document discovery/mutation, including explicit-state callers."""
+    runtime = RUNTIME / "cadcraft"
+    runtime.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with (runtime / "documents.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return _cad_open_unlocked(params, timeout, state, reload_document)
+
+
+def _cad_open_unlocked(params, timeout, state, reload_document):
+    raw = params.get("path")
+    if not isinstance(raw, str) or not raw or not Path(raw).is_absolute():
+        raise BridgeError("CADCraft app.open requires an absolute file path")
+    path = Path(raw).expanduser().resolve()
+    params = dict(params, path=str(path))
+    deadline = time.monotonic() + timeout
+    def request(method, values):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise BridgeError("Document operation deadline exceeded; inspect before retrying")
+        return _request("cadcraft", method, values, remaining, state)
+    inspected = request("ui.inspect", {})
+    try:
+        documents = inspected["session"]["documents"]
+        if not isinstance(documents, list):
+            raise ValueError()
+        for doc in documents:
+            if not isinstance(doc, dict) or type(doc.get("index")) is not int or doc["index"] < 0:
+                raise ValueError()
+            if type(doc.get("dirty")) is not bool or not isinstance(doc.get("path"), (str, type(None))):
+                raise ValueError()
+        if len({doc["index"] for doc in documents}) != len(documents):
+            raise ValueError()
+    except (KeyError, TypeError, ValueError):
+        raise BridgeError("Cannot inspect CADCraft documents; refusing a duplicate open")
+    matches = [doc for doc in documents if doc.get("path") and Path(doc["path"]).resolve() == path]
+    if matches and not reload_document:
+        chosen = next((doc for doc in matches if doc.get("active")), matches[-1])
+        result = request("engine.execute", {"command": "document.switch", "params": {"index": chosen["index"]}})
+        return {"path": str(path), "reused": True, "index": chosen["index"], "reply": result}
+    if reload_document and matches:
+        if any(doc["dirty"] for doc in matches):
+            raise BridgeError("Document has unsaved changes; refusing to reload")
+        if not path.is_file():
+            raise BridgeError("Reload source is missing; leaving saved tabs open")
+        for doc in sorted(matches, key=lambda doc: doc["index"], reverse=True):
+            request("engine.execute", {"command": "close", "params": {"index": doc["index"]}})
+    return request("app.open", params)
+
+
+def _request(app, method, params, timeout, state):
     spec = APPS[app]
     request_id = uuid.uuid4().hex
     envelope = {"id": request_id, "method": method, "params": params}
@@ -417,16 +475,23 @@ def main():
     p.add_argument("--units", choices=["mm"], required=True, help="Explicitly interpret source coordinates as millimetres")
     p.add_argument("--handle", help="Source entity handle; required if drawing contains more than one entity")
     p.add_argument("--name", default="extrusion")
+    p = sub.add_parser("open-document", help="Open or activate a CADCraft document in its existing managed session")
+    p.add_argument("app", choices=["cadcraft"])
+    p.add_argument("path", type=Path)
+    p.add_argument("--reload", action="store_true", help="Reload from disk after closing saved matching tabs; refuse unsaved changes")
     p = sub.add_parser("call")
     p.add_argument("app", choices=APPS)
     p.add_argument("method")
     p.add_argument("params", nargs="?", default=None)
     p.add_argument("--params-file", type=Path, help="Read params JSON object from a file")
     p.add_argument("--timeout", type=float, default=20)
+    p.add_argument("--reload-document", action="store_true", help="Explicit reload for CADCraft app.open only")
     args = parser.parse_args()
     configure(args.workspace, args.state_dir, args.apps_dir)
     try:
-        if args.action == "cad-export-stl":
+        if args.action == "open-document":
+            result = call(args.app, "app.open", {"path": str(args.path.expanduser().resolve())}, reload_document=args.reload)
+        elif args.action == "cad-export-stl":
             from .solid import export_stl
             drawing = call("cadcraft", "drawing.inspect", {"entities": True, "limit": 10000})
             result = export_stl(drawing, BASE / "outputs", args.name)
@@ -453,7 +518,7 @@ def main():
             parsed = json.loads(raw)
             if not isinstance(parsed, dict):
                 raise BridgeError("Params must be a JSON object")
-            result = call(args.app, args.method, parsed, args.timeout)
+            result = call(args.app, args.method, parsed, args.timeout, reload_document=args.reload_document)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except (BridgeError, OSError, ValueError, subprocess.CalledProcessError, KeyError) as error:
         print(json.dumps({"error": str(error)}, ensure_ascii=False), file=sys.stderr)
