@@ -2,7 +2,21 @@
 
 All changes that affect users are recorded here. Versions follow the policy in [VERSIONING.md](VERSIONING.md).
 
-## [Unreleased]
+## [0.6.0] - 2026-10-11
+
+### Added
+
+- PhotoCraft `app.open` canonical-path reuse and saved-only explicit reload, using the existing document-operation lock.
+- PdfCraft `ui.open` path reuse, verified inactive-tab activation and refusal of ambiguous UI state. PDF reload remains unsupported.
+- VectorCraft canonical-path reuse for `app.open` and path-based `document.open`, with serialized tab discovery and fail-closed handling of unknown paths.
+- `open-document` support for PhotoCraft, PdfCraft and VectorCraft; regression tests and six-app live reuse evidence.
+
+### Verified limitations
+
+- An ordinary VectorCraft GUI session cannot gain a control listener after startup. Its existing tab is selected without reopening; managed VectorCraft opening guards are tested against protocol fixtures.
+- VectorCraft refuses a new open if a pathless tab prevents proving that the file is not already open. Save pathless documents before a new guarded open; select an existing tab directly to continue editing it.
+- Native calls and repeated document creation bypass opening guards. FilmCraft/EffectCraft reload tests cover saved projects only.
+
 
 ## [0.5.0] - 2026-10-11
 

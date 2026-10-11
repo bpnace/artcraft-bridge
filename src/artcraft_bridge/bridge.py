@@ -74,7 +74,7 @@ def load_state(app):
     try:
         state = json.loads(state_path(app).read_text())
     except FileNotFoundError:
-        raise BridgeError("App has no managed control session; run start first")
+        raise BridgeError("App has no managed control session; use its existing GUI if already running, or run start when closed")
     if state.get("app") != app or not isinstance(state.get("port"), int):
         raise BridgeError("Invalid managed session")
     if state.get("workspace") != str(BASE) or state.get("apps_dir") != str(APPS_DIR):
@@ -228,26 +228,33 @@ def call(app, method, params=None, timeout=20, state=None, reload_document=False
         with (runtime / "launch.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             return call(app, method, params, timeout, state=load_state(app), reload_document=reload_document)
-    if reload_document and (app != "cadcraft" or method != "app.open"):
-        raise BridgeError("Document reload is supported only for CADCraft app.open")
-    if app == "cadcraft" and method == "app.open":
-        return _cad_open(params, timeout, state, reload_document)
+    if reload_document and (app not in ("cadcraft", "photocraft") or method != "app.open"):
+        raise BridgeError("Document reload is supported only for CADCraft and PhotoCraft app.open")
+    if (app in ("cadcraft", "photocraft", "vectorcraft") and method == "app.open") or (app == "pdfcraft" and method == "ui.open"):
+        return _document_open(app, params, timeout, state, reload_document)
+    if (app == "vectorcraft" and method == "engine.execute" and params.get("command") == "document.open"
+            and isinstance(params.get("params"), dict) and "path" in params["params"]):
+        return _document_open(app, params["params"], timeout, state, reload_document, open_method=method)
     return _request(app, method, params, timeout, state)
 
 
-def _cad_open(params, timeout, state, reload_document):
+def _document_open(app, params, timeout, state, reload_document, open_method="app.open"):
     """Serialize document discovery/mutation, including explicit-state callers."""
-    runtime = RUNTIME / "cadcraft"
+    runtime = RUNTIME / app
     runtime.mkdir(parents=True, exist_ok=True, mode=0o700)
     with (runtime / "documents.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        return _cad_open_unlocked(params, timeout, state, reload_document)
+        if app == "pdfcraft":
+            return _pdf_open_unlocked(params, timeout, state)
+        if app == "vectorcraft":
+            return _vector_open_unlocked(params, timeout, state, open_method)
+        return _document_open_unlocked(app, params, timeout, state, reload_document)
 
 
-def _cad_open_unlocked(params, timeout, state, reload_document):
+def _document_open_unlocked(app, params, timeout, state, reload_document):
     raw = params.get("path")
     if not isinstance(raw, str) or not raw or not Path(raw).is_absolute():
-        raise BridgeError("CADCraft app.open requires an absolute file path")
+        raise BridgeError(APPS[app]["name"] + " app.open requires an absolute file path")
     path = Path(raw).expanduser().resolve()
     params = dict(params, path=str(path))
     deadline = time.monotonic() + timeout
@@ -255,10 +262,11 @@ def _cad_open_unlocked(params, timeout, state, reload_document):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise BridgeError("Document operation deadline exceeded; inspect before retrying")
-        return _request("cadcraft", method, values, remaining, state)
+        return _request(app, method, values, remaining, state)
     inspected = request("ui.inspect", {})
     try:
-        documents = inspected["session"]["documents"]
+        session = inspected["session"]
+        documents = session["documents"]
         if not isinstance(documents, list):
             raise ValueError()
         for doc in documents:
@@ -266,23 +274,197 @@ def _cad_open_unlocked(params, timeout, state, reload_document):
                 raise ValueError()
             if type(doc.get("dirty")) is not bool or not isinstance(doc.get("path"), (str, type(None))):
                 raise ValueError()
-        if len({doc["index"] for doc in documents}) != len(documents):
+        indices = {doc["index"] for doc in documents}
+        if len(indices) != len(documents):
             raise ValueError()
+        if app == "photocraft":
+            active = session["active"]
+            if active is not None and (type(active) is not int or active not in indices):
+                raise ValueError()
     except (KeyError, TypeError, ValueError):
-        raise BridgeError("Cannot inspect CADCraft documents; refusing a duplicate open")
+        raise BridgeError("Cannot inspect " + APPS[app]["name"] + " documents; refusing a duplicate open")
     matches = [doc for doc in documents if doc.get("path") and Path(doc["path"]).resolve() == path]
     if matches and not reload_document:
-        chosen = next((doc for doc in matches if doc.get("active")), matches[-1])
-        result = request("engine.execute", {"command": "document.switch", "params": {"index": chosen["index"]}})
+        if app == "photocraft":
+            active_matches = [doc for doc in matches if doc["index"] == session["active"]]
+        else:
+            active_matches = [doc for doc in matches if doc.get("active")]
+        chosen = active_matches[0] if active_matches else matches[-1]
+        command = "document.activate" if app == "photocraft" else "document.switch"
+        key = "document" if app == "photocraft" else "index"
+        result = request("engine.execute", {"command": command, "params": {key: chosen["index"]}})
         return {"path": str(path), "reused": True, "index": chosen["index"], "reply": result}
     if reload_document and matches:
         if any(doc["dirty"] for doc in matches):
             raise BridgeError("Document has unsaved changes; refusing to reload")
         if not path.is_file():
             raise BridgeError("Reload source is missing; leaving saved tabs open")
+        command = "file.close" if app == "photocraft" else "close"
+        key = "document" if app == "photocraft" else "index"
         for doc in sorted(matches, key=lambda doc: doc["index"], reverse=True):
-            request("engine.execute", {"command": "close", "params": {"index": doc["index"]}})
+            request("engine.execute", {"command": command, "params": {key: doc["index"]}})
     return request("app.open", params)
+
+
+def _vector_open_unlocked(params, timeout, state, open_method):
+    raw = params.get("path")
+    if not isinstance(raw, str) or not raw or not Path(raw).is_absolute():
+        raise BridgeError("VectorCraft document open requires an absolute file path")
+    path = Path(raw).expanduser().resolve()
+    params = dict(params, path=str(path))
+    deadline = time.monotonic() + timeout
+    def request(method, values):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise BridgeError("Document operation deadline exceeded; inspect before retrying")
+        return _request("vectorcraft", method, values, remaining, state)
+    inspected = request("ui.inspect", {})
+    try:
+        documents = inspected["documents"]
+        original = inspected["activeDocument"]
+        if not isinstance(documents, list):
+            raise ValueError()
+        if documents:
+            if type(original) is not int or not 0 <= original < len(documents):
+                raise ValueError()
+        elif original is not None:
+            raise ValueError()
+        for doc in documents:
+            if not isinstance(doc, dict) or not isinstance(doc.get("title"), str) or type(doc.get("dirty")) is not bool:
+                raise ValueError()
+    except (KeyError, TypeError, ValueError):
+        raise BridgeError("Cannot inspect VectorCraft documents; refusing a duplicate open")
+    current = original
+    pathless = False
+    def activate(index):
+        nonlocal current
+        # A failed reply can still mean activation completed: restore on failure.
+        current = index
+        return request("engine.execute", {"command": "document.activate", "params": {"index": index}})
+    order = [original] + [index for index in range(len(documents)) if index != original] if documents else []
+    try:
+        for index in order:
+            if current != index:
+                activate(index)
+            detail = request("engine.execute", {"command": "document.inspect", "params": {"depth": 0}})
+            try:
+                if not isinstance(detail, dict) or "path" not in detail:
+                    raise ValueError()
+                if detail.get("title") != documents[index]["title"] or type(detail.get("dirty")) is not bool:
+                    raise ValueError()
+                if detail["dirty"] != documents[index]["dirty"]:
+                    raise ValueError()
+                saved = detail["path"]
+                if saved is not None and (not isinstance(saved, str) or not saved):
+                    raise ValueError()
+                if saved is None:
+                    pathless = True
+                else:
+                    saved = Path(saved).expanduser()
+                    if not saved.is_absolute():
+                        workspace = state.get("workspace")
+                        if not isinstance(workspace, str) or not Path(workspace).is_absolute():
+                            raise ValueError()
+                        saved = Path(workspace) / saved
+                    if saved.resolve() == path:
+                        return {"path": str(path), "reused": True, "index": index}
+            except (KeyError, TypeError, ValueError):
+                raise BridgeError("Cannot inspect VectorCraft document identity; refusing a duplicate open")
+        if current != original:
+            activate(original)
+        if pathless:
+            raise BridgeError("VectorCraft has documents without a saved path; save them before opening another file, or activate an existing tab directly to continue editing")
+    except Exception:
+        if original is not None and current != original:
+            try:
+                activate(original)
+            except Exception:
+                pass
+        raise
+    if open_method == "engine.execute":
+        return request(open_method, {"command": "document.open", "params": params})
+    return request(open_method, params)
+
+
+def _pdf_documents(inspected):
+    """Validate PdfCraft's tab identity before any document mutation."""
+    try:
+        documents = inspected["documents"]
+        if not isinstance(documents, list):
+            raise ValueError()
+        for doc in documents:
+            if not isinstance(doc, dict):
+                raise ValueError()
+            if any(type(doc.get(key)) is not int or doc[key] < 0 for key in ("tab", "doc")):
+                raise ValueError()
+            if not isinstance(doc.get("name"), str) or "path" not in doc or not isinstance(doc["path"], (str, type(None))):
+                raise ValueError()
+            if type(doc.get("dirty")) is not bool or type(doc.get("active")) is not bool:
+                raise ValueError()
+        if any(len({doc[key] for doc in documents}) != len(documents) for key in ("tab", "doc")):
+            raise ValueError()
+        if sum(doc["active"] for doc in documents) > 1:
+            raise ValueError()
+        return documents
+    except (KeyError, TypeError, ValueError):
+        raise BridgeError("Cannot inspect PdfCraft documents; refusing a duplicate open")
+
+
+def _pdf_open_unlocked(params, timeout, state):
+    raw = params.get("path")
+    if not isinstance(raw, str) or not raw or not Path(raw).is_absolute():
+        raise BridgeError("PdfCraft ui.open requires an absolute file path")
+    path = Path(raw).expanduser().resolve()
+    params = dict(params, path=str(path))
+    deadline = time.monotonic() + timeout
+    def request(method, values):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise BridgeError("Document operation deadline exceeded; inspect before retrying")
+        return _request("pdfcraft", method, values, remaining, state)
+    documents = _pdf_documents(request("ui.state", {}))
+    matches = [doc for doc in documents if doc["path"] and Path(doc["path"]).resolve() == path]
+    if not matches:
+        return request("ui.open", params)
+    active = next((doc for doc in matches if doc["active"]), None)
+    if active:
+        return {"path": str(path), "reused": True, "tab": active["tab"], "doc": active["doc"]}
+    if len(matches) != 1:
+        raise BridgeError("Ambiguous PdfCraft document tabs; refusing to select or reopen")
+    chosen = matches[0]
+    if sum(doc["name"] == chosen["name"] for doc in documents) != 1:
+        raise BridgeError("Ambiguous PdfCraft document names; refusing to select or reopen")
+    inspected = request("ui.inspect", {"query": chosen["name"], "limit": 512})
+    try:
+        widgets = inspected["widgets"]
+        if inspected.get("truncated") is not False:
+            raise ValueError()
+        if type(inspected.get("count")) is not int or inspected["count"] != len(widgets):
+            raise ValueError()
+        if not isinstance(widgets, list):
+            raise ValueError()
+        buttons = [widget for widget in widgets if isinstance(widget, dict)
+                   and widget.get("role") == "Button" and widget.get("label") == chosen["name"]]
+        if len(buttons) != 1:
+            raise ValueError()
+        button = buttons[0]
+        if not isinstance(button.get("id"), str) or not button["id"]:
+            raise ValueError()
+        if button.get("clickable") is not True or button.get("enabled") is not True or button.get("toggled") != "false":
+            raise ValueError()
+        rect = button.get("rect")
+        if not isinstance(rect, list) or len(rect) != 4 or any(type(value) not in (int, float) for value in rect):
+            raise ValueError()
+        if rect[2] <= rect[0] or rect[3] <= rect[1]:
+            raise ValueError()
+    except (KeyError, TypeError, ValueError):
+        raise BridgeError("Cannot identify a unique PdfCraft document button; refusing to select or reopen")
+    reply = request("ui.click", {"id": button["id"]})
+    verified = _pdf_documents(request("ui.state", {}))
+    if not any(doc["doc"] == chosen["doc"] and doc["active"] and doc["path"]
+               and Path(doc["path"]).resolve() == path for doc in verified):
+        raise BridgeError("PdfCraft document activation was not verified; inspect before retrying")
+    return {"path": str(path), "reused": True, "tab": chosen["tab"], "doc": chosen["doc"], "reply": reply}
 
 
 def _request(app, method, params, timeout, state):
@@ -475,22 +657,23 @@ def main():
     p.add_argument("--units", choices=["mm"], required=True, help="Explicitly interpret source coordinates as millimetres")
     p.add_argument("--handle", help="Source entity handle; required if drawing contains more than one entity")
     p.add_argument("--name", default="extrusion")
-    p = sub.add_parser("open-document", help="Open or activate a CADCraft document in its existing managed session")
-    p.add_argument("app", choices=["cadcraft"])
+    p = sub.add_parser("open-document", help="Open or activate a supported document in its existing managed session")
+    p.add_argument("app", choices=["cadcraft", "photocraft", "pdfcraft", "vectorcraft"])
     p.add_argument("path", type=Path)
-    p.add_argument("--reload", action="store_true", help="Reload from disk after closing saved matching tabs; refuse unsaved changes")
+    p.add_argument("--reload", action="store_true", help="CADCraft/PhotoCraft only: reload after closing saved matching tabs; refuse unsaved changes")
     p = sub.add_parser("call")
     p.add_argument("app", choices=APPS)
     p.add_argument("method")
     p.add_argument("params", nargs="?", default=None)
     p.add_argument("--params-file", type=Path, help="Read params JSON object from a file")
     p.add_argument("--timeout", type=float, default=20)
-    p.add_argument("--reload-document", action="store_true", help="Explicit reload for CADCraft app.open only")
+    p.add_argument("--reload-document", action="store_true", help="Explicit reload for CADCraft or PhotoCraft app.open")
     args = parser.parse_args()
     configure(args.workspace, args.state_dir, args.apps_dir)
     try:
         if args.action == "open-document":
-            result = call(args.app, "app.open", {"path": str(args.path.expanduser().resolve())}, reload_document=args.reload)
+            method = "ui.open" if args.app == "pdfcraft" else "app.open"
+            result = call(args.app, method, {"path": str(args.path.expanduser().resolve())}, reload_document=args.reload)
         elif args.action == "cad-export-stl":
             from .solid import export_stl
             drawing = call("cadcraft", "drawing.inspect", {"entities": True, "limit": 10000})

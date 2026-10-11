@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-11",
+  "guard_extensions": "PhotoCraft, PdfCraft and VectorCraft",
+  "final_instances_per_app": 1,
+  "final_main_windows_per_app": 1,
+  "apps": {
+    "PhotoCraft": {
+      "new_document": 1,
+      "same_path_raw_open_duplicate_before_fix": true,
+      "guarded_repeated_opens": 3,
+      "final_documents": 1
+    },
+    "PdfCraft": {
+      "new_document": 1,
+      "same_path_raw_open_duplicate_before_fix": true,
+      "guarded_repeated_opens": 3,
+      "final_documents": 1,
+      "inactive_activation_verified": true
+    },
+    "LightCraft": {
+      "repeated_imports": 3,
+      "final_photos": 1,
+      "source_copies": 1
+    },
+    "FilmCraft": {
+      "repeated_opens": 3,
+      "final_projects": 1,
+      "sequences": 1
+    },
+    "EffectCraft": {
+      "repeated_opens": 3,
+      "final_projects": 1,
+      "compositions": 1
+    },
+    "VectorCraft": {
+      "new_document": 1,
+      "prior_documents": 1,
+      "final_documents": 2,
+      "raw_handoff_duplicate": true,
+      "test_duplicate_removed": true,
+      "existing_tab_activations": 3,
+      "extra_launch_attempts_refused": 3,
+      "managed_guard_live_tested": false,
+      "managed_guard_regression_tests": 14,
+      "unmanaged_open_attempts_refused": 3,
+      "additional_tab_activations_after_fix": 3,
+      "final_process_unchanged": true
+    }
+  },
+  "automated_tests_passed": 106,
+  "limits": [
+    "Managed CAD/Photo/Pdf/Vector supported opening routes only",
+    "VectorCraft managed opening guard uses official-schema protocol fixtures; existing unmanaged GUI listener cannot be enabled at runtime",
+    "Pathless VectorCraft documents refuse uncertain opens",
+    "Saved FilmCraft/EffectCraft project reload tests only",
+    "Creation operations and native file handoffs are not idempotent"
+  ],
+  "bridge_version": "0.6.0"
+}

@@ -70,7 +70,7 @@ class BridgeTests(unittest.TestCase):
             self.assertFalse(b.process_matches('designcraft', -1, identity=identity))
 
     def test_missing_state_is_actionable(self):
-        with self.assertRaisesRegex(b.BridgeError, 'run start first'):
+        with self.assertRaisesRegex(b.BridgeError, 'use its existing GUI if already running'):
             b.load_state('designcraft')
 
     def test_stale_state_rejected(self):

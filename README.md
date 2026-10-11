@@ -4,13 +4,13 @@
 
 Use it to give an AI coding agent a practical interface to CADCraft, DesignCraft, PhotoCraft, VectorCraft, FilmCraft, LightCraft, EffectCraft and PdfCraft. Verified examples cover all eight apps: print layout, layered photo collage, vector editing, color grading, short video/motion exports, PDF persistence and CAD meshes with bridge-assisted STL export.
 
-Documentation updated 2026-10-11. Current bridge version **0.4.0**.
+Documentation updated 2026-10-11. Current bridge version **0.6.0**.
 
 > Independent automation for ArtCraft Crafting Apps. This project is not affiliated with ArtCraft and does not use the Recraft cloud image service.
 
 ## Status and scope
 
-Version `0.4.0` is experimental. It requires macOS, Python 3.9 or newer, and installed ArtCraft desktop apps. Its runtime uses only the Python standard library.
+Version `0.6.0` is experimental. It requires macOS, Python 3.9 or newer, and installed ArtCraft desktop apps. Its runtime uses only the Python standard library.
 
 The bridge does not provide an MCP registration, a web API, a hosted service, or a PyPI package. Agents and scripts invoke its shell command directly. The installed apps perform their document operations. The optional CAD mesh extension computes convex extrusion and STL locally in the bridge; it makes no internet request.
 
@@ -201,7 +201,7 @@ Operational commands write structured JSON to standard output. Errors are JSON o
 | `start APP` | Reuses a healthy recorded session, or starts one when no other instance is running. Use `--allow-multiple` only for intentional parallel sessions. |
 | `inspect APP` | Reads the current UI state from a managed session. |
 | `commands APP` | Returns the app's current command catalog. Query this before invoking app-specific actions. |
-| `open-document cadcraft PATH [--reload]` | Activates an existing file tab, or opens a new one; explicit reload refuses unsaved changes. |
+| `open-document APP PATH [--reload]` | Reuse canonical file paths in CADCraft, PhotoCraft, PdfCraft and VectorCraft. Reload is limited to CADCraft/PhotoCraft. |
 | `call APP METHOD [JSON]` | Sends an app method with an optional JSON object parameter. |
 | `call APP METHOD --params-file FILE` | Reads the JSON object parameter from `FILE`. Use this for nontrivial parameters and file paths. |
 | `stop APP` | Requests a safe stop for a session owned by this bridge. |
@@ -309,6 +309,38 @@ Python callers use `bridge.start("cadcraft", allow_multiple=True)`. The guard ob
 
 `stop` retains app profiles and PdfCraft portable copies so documents and preferences are not discarded. The documented live tests explicitly removed their disposable PdfCraft copies after confirming the owned process was stopped, while preserving data separately. Do not delete or terminate a running copy to tidy the app list.
 
+## Cross-app document reuse in 0.6.0
+
+The follow-up live test created one new document/project or imported one image in each remaining app. The five closed apps were started once first; subsequent operations reused that session. VectorCraft retained its already-running desktop process. Final checks found exactly one process and one main window per app.
+
+| App | Repeated operation | Verified result |
+|---|---|---|
+| PhotoCraft | Three guarded `app.open` calls | One `.pcraft` tab; the new guard activates the original. Native/raw reopening had created a second tab before the fix. |
+| PdfCraft | Three guarded `ui.open` calls | One PDF tab with the same document ID; inactive-tab activation was also verified. Native/raw reopening had created a second tab before the fix. |
+| LightCraft | Three repeated copy imports | One library photo and one source-file copy; native content deduplication recognizes all repeats. |
+| FilmCraft | Three `file.open` calls | One saved project and one sequence, same process/window. This reloads the single project. |
+| EffectCraft | Three `file.open` calls | One saved project and one composition, same process/window. This reloads the single project. |
+| VectorCraft | New document and repeated existing-tab activation | One new native document beside the existing drawing; two tabs remain. The ordinary GUI process was preserved. Managed path reuse is regression-tested; no live managed-session claim is made for this window. |
+
+Each managed session also survived three repeated `start` calls without relaunch. Three attempts to start another VectorCraft session were refused while its ordinary desktop instance was open. See [sanitized evidence](docs/evidence/cross-app-reuse.json).
+
+**Version 0.6.0 includes the PhotoCraft, PdfCraft and VectorCraft opening guards.** `open-document photocraft PATH` uses `app.open`; `open-document pdfcraft PATH` uses `ui.open`. Raw opening calls require absolute paths. PhotoCraft supports explicit reload only when all matching tabs are saved; PdfCraft reload is refused. PdfCraft can activate an inactive tab only when its name and UI button are unambiguous, and checks its document ID and path afterward. Unclear state causes an error without another open.
+
+For the existing unmanaged VectorCraft window, select the existing document tab for further edits. There is no supported way to enable its control listener after startup. The bridge refuses to start another instance or send an unguarded file handoff. Three guarded open attempts on that window were refused without creating documents; its two tabs and process remained unchanged. Create a new document exactly once per new design. A native menu or macOS file handoff bypasses the bridge guards. FilmCraft/EffectCraft tests cover saved projects; they do not establish protection against reloading unsaved edits. `file.new` is intentionally a creation operation: repeating it can create several new documents. The bridge does not identify repeated intent across arbitrary agent calls.
+
+PdfCraft's private test bundle under Documents could not be signed because Finder metadata was present. A private runtime under `/private/tmp` allowed the test; that temporary state must be retained to control this still-running test session and may not survive reboot. No original installed bundle was modified.
+
+### VectorCraft guard and examples
+
+```sh
+artcraft-bridge --workspace "$SESSION_WORKSPACE" --state-dir "$SESSION_STATE_DIR" open-document vectorcraft /absolute/path/to/design.svg
+artcraft-bridge --workspace "$SESSION_WORKSPACE" --state-dir "$SESSION_STATE_DIR" call vectorcraft app.open '{"path":"/absolute/path/to/design.svg"}'
+```
+
+VectorCraft 0.9.0 exposes tab titles through `ui.inspect`, and the active document path through `document.inspect`. The bridge serializes opening, temporarily activates tabs to inspect their paths, then selects the matching tab. Unsaved edits are preserved. Relative stored paths are resolved against the managed app workspace; requested opening paths must be absolute. Inspection failure prevents another open. A pathless imported or untitled tab prevents proving that a new path is absent, so the bridge refuses that open; save pathless documents before opening a new file, or select the existing tab directly to continue editing it. New-document creation remains a separate, single intentional action.
+
+This behavior follows the [installed protocol implementation](https://github.com/storytold/vectorcraft/blob/10f1c56a861869936af0027cef14b1cf5d8cf515/crates/ui-egui/src/control.rs) and [document inspection schema](https://github.com/storytold/vectorcraft/blob/10f1c56a861869936af0027cef14b1cf5d8cf515/crates/engine/src/inspect.rs). Native menus, Finder/macOS file handoffs and other opening commands bypass bridge interception. This fixes the bridge's supported opening routes; it does not patch the installed app's native open handler.
+
 ## Open new documents in an already-running app
 
 **Create or open another document in the existing app process.** A new design is a document operation, not a reason to launch another app. Keep existing documents open when the app supports tabs; save work before operations that replace the active drawing.
@@ -335,9 +367,9 @@ artcraft-bridge --workspace "$SESSION_WORKSPACE" --state-dir "$SESSION_STATE_DIR
 {"path": "/absolute/path/to/car-cadcraft.dxf"}
 ```
 
-An existing dirty tab is activated with its edits preserved. To deliberately reload from disk, use `open-document cadcraft PATH --reload`, raw `call cadcraft app.open --params-file FILE --reload-document`, or Python `call("cadcraft", "app.open", {"path": absolute_path}, reload_document=True)`. Reload requires an existing source file and saved matching tabs. It closes those tabs in descending index order, then opens the file once. Raw `app.open` paths must be absolute. This guard is specific to managed CADCraft; other apps retain their protocol behavior.
+An existing dirty tab is activated with its edits preserved. To deliberately reload from disk, use `open-document cadcraft PATH --reload`, raw `call cadcraft app.open --params-file FILE --reload-document`, or Python `call("cadcraft", "app.open", {"path": absolute_path}, reload_document=True)`. Reload requires an existing source file and saved matching tabs. It closes those tabs in descending index order, then opens the file once. Raw `app.open` paths must be absolute. The same canonical-path reuse applies to managed PhotoCraft (`app.open`), PdfCraft (`ui.open`) and VectorCraft (`app.open` and path-based `engine.execute document.open`). VectorCraft and PdfCraft refuse `--reload`.
 
-Discovery, switching, closing and opening share a document-operation lock, including explicit-state Python calls, and one request deadline. No failed mutation is automatically retried. Reload is not transactional: a load failure after saved tabs close leaves their files on disk. Inspect before retrying. Manual GUI actions do not participate in the bridge lock.
+Discovery, switching, closing and opening share a document-operation lock, including explicit-state Python calls, and one request deadline after acquiring the lock. No failed mutation is automatically retried. Reload is not transactional: a load failure after saved tabs close leaves their files on disk. Inspect before retrying. Manual GUI actions do not participate in the bridge lock.
 
 The live test found six saved copies of the seat file, removed five, and confirmed repeated opens and explicit reload retained one tab and the same app process. See [live document guard evidence](docs/evidence/document-guard.json).
 
@@ -347,7 +379,7 @@ The car test reused the existing CADCraft process, saved and reopened the new dr
 
 The CLI cannot attach its control protocol to an ordinary GUI process that has no control listener. Use that app's native **File → New Document** or **File → Open** action through desktop automation. The bridge's launch guard blocks an additional process; it does not turn the existing GUI into a managed session.
 
-For VectorCraft, the following macOS document handoff was tested while VectorCraft was already running:
+For a genuinely new VectorCraft file, this macOS handoff was tested with an already-running ordinary GUI instance. It bypasses bridge guards and must not be repeated for a file whose tab is already open:
 
 ```bash
 open -a /Applications/VectorCraft.app /absolute/path/to/new-design.svg
@@ -363,7 +395,7 @@ Both SVGs appeared as editable document tabs in the same process. For DesignCraf
 | VectorCraft | ORBIT CLUB and CITY DRIVE SVG documents in two tabs | Both complete compositions rendered as editable vectors. |
 | CADCraft | Basic car drawing opened, saved and reopened | 11,800 faces; one watertight connected mesh; 120 × 56 × 46 mm; STL checked independently. |
 
-Process IDs stayed unchanged throughout the test, and a final executable-path inventory found exactly one process per app. Desktop opening is an operator workflow; `open-document` targets managed CADCraft and does not attach to unmanaged GUI apps.
+Process IDs stayed unchanged throughout the test, and a final executable-path inventory found exactly one process per app. Desktop opening is an operator workflow; `open-document` targets managed CADCraft, PhotoCraft, PdfCraft and VectorCraft. It does not attach to unmanaged GUI apps.
 
 ### Why CADCraft shows a flat view of a 3D file
 
