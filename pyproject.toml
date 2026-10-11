@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recraft-bridge"
+dynamic = ["version"]
+description = "Independent local desktop automation bridge for ArtCraft Crafting Apps"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{name = "Recraft Bridge contributors"}]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = []
+
+[project.scripts]
+recraft-bridge = "recraft_bridge.bridge:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "recraft_bridge.__version__"}
